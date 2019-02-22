@@ -7,11 +7,11 @@ import ind
 
 
 def hs_analysis(temp_base, temp_amb, p, hsn):
-    # base, ambient temp [k], atmospheric pressure [mb] (https://w1.weather.gov/obhistory/KCVO.html, heat sink #
+    # base, ambient temp [k], atmospheric pressure [mb] (https://w1.weather.gov/obhistory/KCVO.html), heat sink #
     # fluid & solid thermal properties
     dt = temp_base - temp_amb                                   # temp difference between base and ambient, [k]
     temp_film = (temp_base + temp_amb) / 2                      # film temperature, [k]
-    k_al = 240                                                  # thermal conductivity of aluminum, [W/m*k]
+    k_al = ind.kal(temp_base)                                   # thermal conductivity of aluminum, [W/m*k]
     k_air = PropsSI('L', 'T', temp_film, 'P', p*100, 'Air')     # thermal conductivity of air @ temp_film, [W/m*k]
     dens = PropsSI('D', 'T', temp_amb, 'P', p*100, 'Air')       # air density, [kg/m^3]
     visc = PropsSI('V', 'T', temp_amb, 'P', p*100, 'Air')       # air dynamic viscosity mu, [N*s/m^2]
@@ -19,11 +19,11 @@ def hs_analysis(temp_base, temp_amb, p, hsn):
 
     # heat sink geometry
     g_b = (0.0089, 0.0018, 0.0078, 0.0007, 180)  # basic geometry : (length, spacing, width, thickness, # of fins) [m]
-    # calculated geometry: (perimeter, l_c, a_space, a_cross-s, a_base) [m, m^2], fixed tuple, l_c NEEDS UPDATING
+    # calculated geometry: (perimeter, l_c, a_space, a_cross-s, a_base) [m, m^2], fixed tuple, l_c NEEDS UPDATING, 2*s
     g_c = (2 * g_b[2] + 2 * g_b[3], g_b[0] + g_b[3] / 2, g_b[0] * g_b[1], g_b[2] * g_b[3], g_b[1] * g_b[2] * (g_b[4] + 1))
     a_fin = 2 * g_b[0] * g_b[2] + 2 * g_b[0] * g_b[3] + g_c[3]  # fin area, [m^2] NEEDS UPDATING, based on real surface
     a_tot = g_b[4] * a_fin + g_c[4]                             # fin area + base area, [m^2]
-    d_h = 4 * g_c[2] / (2 * g_b[0] + g_b[1])                    # hydraulic diameter, [m] NEEDS UPDATING, parallel plate
+    d_h = 4 * g_c[2] / (2 * g_b[0] + g_b[1])                    # hydraulic diameter, [m] NEEDS UPDATING, parallel plate, change to L-C
     ra = ind.heatsink(hsn)                                      # surface roughness Ra, [micron] NEEDS ERROR MESSAGE
 
     # Thermal Analysis
