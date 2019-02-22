@@ -5,6 +5,10 @@ import math
 
 
 # Functions
+def kal(t):  # returns the thermal conductivity of aluminum for a given temperature
+    return 101.42 + 0.7709*t - ((7.731*10**-5)*t**2) - ((7.514*10**-6)*t**3) + ((1.934*10**-8)*t**4) - ((1.973*10**-11)*t**5) + ((7.406*10**-15)*t**6)
+
+
 def heatsink(hsn):  # returns the value of the surface roughness for a given heat sink number
     hs = [0.00015, 0.000005, 0.000005, 0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961,
           0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961]
@@ -112,3 +116,7 @@ def roverall(dtb, qt):
     for i in range(0, len(qt)):
         r.append(dtb / qt[i])
     return r
+
+
+if __name__ == '__main__':
+    print(kal(390))
