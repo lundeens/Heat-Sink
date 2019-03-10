@@ -36,4 +36,4 @@ def sa(hsn):  # returns the exposed surface area of each heat sink
 
 
 def fp():
-    return ValueError
+    return ValueError('Must use flat plate correlations for HSN 1')
