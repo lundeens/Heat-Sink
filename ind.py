@@ -9,6 +9,10 @@ def kal(t):  # returns the thermal conductivity of aluminum for a given temperat
     return 101.42 + 0.7709*t - ((7.731*10**-5)*t**2) - ((7.514*10**-6)*t**3) + ((1.934*10**-8)*t**4) - ((1.973*10**-11)*t**5) + ((7.406*10**-15)*t**6)
 
 
+def kcu(t):
+    return 399.5 - 0.05618*t + ((3.518*10**-5)*t**2) - ((7.531*10**-8)*t**3) + ((3.338*10**-11)*t**4)
+
+
 def reynolds(v, density, diam_hyd, visc_d):  # finds the reynolds number by calling reynolds()
     re = []
     for i in range(0, len(v)):
@@ -114,3 +118,4 @@ def roverall(dtb, qt):
 
 if __name__ == '__main__':
     print(kal(390))
+    print(kcu(420))
