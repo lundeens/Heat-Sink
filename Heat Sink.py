@@ -6,7 +6,6 @@ from CoolProp.CoolProp import PropsSI
 import pandas
 import geo
 import ind
-import math
 from statistics import mean
 import matplotlib.pyplot as plt
 import numpy
@@ -27,19 +26,19 @@ def hs_analysis(ve, p, hsn, data):
     ambient = data['Channel 11'].values
     cu_base = []
     for i in range(0, len(cu_back)):
-        cu_base.append((cu_left[i] + cu_back[i] + cu_righ[i] + cu_bott[i]) / 4)
+        cu_base.append((cu_left[i] + cu_back[i] + cu_righ[i] + cu_fron[i]) / 4)
     t = []
     for i in range(1, len(cu_top_) - 301):                      # find the steady state values of the data
         if abs(cu_top_[i] - cu_top_[i + 300]) <= 0.01:
             t.append(i)
-    temp_cu_top_ = mean(cu_top_[t[0]:-1])
-    temp_cu_midd = mean(cu_midd[t[0]:-1])
-    temp_cu_bott = mean(cu_bott[t[0]:-1])
-    temp_cu = mean(cu_base[t[0]:-1])
-    temp_delb = mean(de_bott[t[0]:-1])
-    temp_base = mean(hs_base[t[0]:-1])
-    temp_amb = mean(ambient[t[0]:-1])
-    print(temp_cu, temp_delb, temp_base, temp_amb)
+    temp_cu_top_ = mean(cu_top_[t[0]:-1])                       # top temperature in copper, [k]
+    temp_cu_midd = mean(cu_midd[t[0]:-1])                       # middle temperature in copper, [k]
+    temp_cu_bott = mean(cu_bott[t[0]:-1])                       # bottom temperature in copper, [k]
+    temp_cu = mean(cu_base[t[0]:-1])                            # base temperature of copper, [k]
+    temp_delb = mean(de_bott[t[0]:-1])                          # bottom of delrin temperature, [k]
+    temp_base = mean(hs_base[t[0]:-1])                          # heat sink base temperature, [k]
+    temp_amb = mean(ambient[t[0]:-1])                           # ambient temperature, [k]
+    #print(temp_cu, temp_delb, temp_base, temp_amb)
 
     # base, ambient temp [k], atmospheric pressure [mb] (https://w1.weather.gov/obhistory/KCVO.html), heat sink #
     # fluid & solid thermal properties
@@ -57,52 +56,39 @@ def hs_analysis(ve, p, hsn, data):
 
     # Thermal Loss
     q = 56.4515  # power supplied to the system for 2.5 W/cm^2 [W]
-    l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)  # thermal loss through bottom delrin [W]
-    print(l_b)
-    re_d = dens * ve * 0.1016 / visc                             # Reynolds Number at width scale [unit-less]
-    s = 2 * math.pi * 0.0381 / (0.93 * math.log(4 / 2) - 0.05)   # shape factor for conduction model, [m]
-    n = k_air * 0.158 * (re_d ** (2 / 3)) * (pr ** (1 / 3)) * 0.0154838 / (s * k_del * 0.1016)  # loss coefficient, [unit-less]
-    print(k_air, re_d, pr, s, k_del, n)
-    dn = 1
-    while abs(dn) > 0.0000001:  # loop to find proper k and Pr
-        temp_surf = (temp_cu + n * temp_amb) / (1 + n)  # delrin side surface temperature, [k]
-        temp_filmd = (temp_surf + temp_amb) / 2  # film temperature on the delrin sides, [k]
-        k_aird = PropsSI('L', 'T', temp_filmd, 'P', p * 100, 'Air')  # thermal conductivity of air @ temp_filmd, [W/m*k]
-        prd = PropsSI('Prandtl', 'T', temp_filmd, 'P', p * 100, 'Air')  # Prandtl Number @ temp_filmd, [unit-less]
-        nd = k_aird * 0.158 * (re_d ** (2 / 3)) * (prd ** (1 / 3)) * 0.0154838 / (s * k_del * 0.1016)
-        dn = nd - n
-        n = nd
-    print(temp_surf, n)
-    l_s = s * k_del * (temp_cu - temp_surf)
-    q_leftover = q - l_b - l_s
-    print(q_leftover)
-    ss = 2 * math.pi * (0.0000254) / (0.93 * math.log(4 / 2) - 0.05)  # shape factor for conduction model, [m]
-    ns = k_aird * 0.158 * (re_d ** (2 / 3)) * (prd ** (1 / 3)) * 0.00001032 / (
-                ss * k_del * 0.1016)  # loss coefficient, [unit-less]
-    print(ns)
-    temp_gcu = [temp_cu]
-    temp_gsu = [temp_surf]
-    for i in range(2625):
-        dn = 1
-        while abs(dn) > 0.0000001:  # loop to find proper k and Pr by refining ns
-            temp_surf = (temp_gcu[i] + ns * temp_amb) / (1 + ns)  # delrin side surface temperature, [k]
-            # print(temp_surf)
-            temp_filmd = (temp_surf + temp_amb) / 2  # film temperature on the delrin sides, [k]
-            k_aird = PropsSI('L', 'T', temp_filmd, 'P', p * 100,
-                             'Air')  # thermal conductivity of air @ temp_filmd, [W/m*k]
-            prd = PropsSI('Prandtl', 'T', temp_filmd, 'P', p * 100, 'Air')  # Prandtl Number @ temp_filmd, [unit-less]
-            nd = k_aird * 0.158 * (re_d ** (2 / 3)) * (prd ** (1 / 3)) * 0.00001032 / (ss * k_del * 0.1016)
-            dn = nd - ns
-            ns = nd
-        # print(ns)
-        temp_gsu.append(temp_surf)
-        less = s * k_del * (temp_gcu[i] - temp_gsu[i])
-        # print(less)
-        q_leftover -= less
-        temp_gcu.append(temp_gcu[i] - 2.54 * 10 ** -5 * q_leftover / (ind.kcu(temp_gcu[i]) * 0.00258064))
-    # print(q_leftover)
-    print(temp_gsu)
-    print(temp_gcu)
+    # l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)  # thermal loss through bottom delrin [W]
+    # loss out the bottom
+    temp_film_bo = (temp_delb + temp_amb) / 2                        # film temperature at bottom, [k]
+    k_air_bo = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')     # thermal conductivity of air, [W/m*k]
+    rho_bo = PropsSI('D', 'T', temp_film_bo, 'P', p*100, 'Air')      # density of air, [kg/m^3]
+    cp_bo = PropsSI('CP0MASS', 'T', temp_film_bo, 'P', p*100, 'Air') # specific heat of air, [J/kg*k]
+    alpha_bo = k_air_bo / (rho_bo * cp_bo)                          # thermal diffusivity, [m^2/s]
+    kvisc_bo = PropsSI('V', 'T', temp_film_bo, 'P', p*100, 'Air') / rho_bo  # kinematic viscosity of air, [m^2/s]
+    ra = 9.81 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 3) / (alpha_bo * kvisc_bo)  # Rayleigh number [unit-less]
+    h_bo = 0.52 * k_air_bo * (ra ** (1 / 5)) / 0.0508                 # convective heat transfer coefficient, [W/m^2*k]
+    l_bo = 0.00258064 * (temp_cu - temp_amb) / ((1 / h_bo) + (0.0127 / k_del))  # loss through bottom delrin [W]
+    #print(l_bo)
+    # loss out the base
+    k_air_ba = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')     # thermal conductivity of air, [W/m*k]
+    pr_ba = PropsSI('Prandtl', 'T', temp_film_bo, 'P', p*100, 'Air')  # Prandtl number, [unit-less]
+    re_ba = dens * ve * 0.1016 / visc                                 # Reynolds number at the base, [unit-less]
+    h_ba = k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) / 0.508  # heat transfer coefficient [W/m^2*k]
+    l_ba = 0.007974 * (temp_cu - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the base, [W]
+    #print(l_ba)
+    # loss out the fourier section
+    topgrad = (temp_cu_top_ - temp_cu_midd) / 0.018999  # 0.748 in    # map out temperature gradients and average them
+    bottomgrad = (temp_cu_midd - temp_cu_bott) / 0.019075  # 0.751 in # to create a reference gradient that will be used
+    fullgrad = (temp_cu_top_ - temp_cu_bott) / 0.038075  # 1.499 in   # to find the average temperature on the side
+    tgrad = (topgrad + bottomgrad + fullgrad) / 3
+    # print(topgrad, bottomgrad, fullgrad, tgrad)
+    temp_int = temp_cu_midd - tgrad * 0.037313  # 1.469 in            # top surface temperature estimation
+    temp_top = tgrad * 0.064567 + temp_int  # 2.542 in                # bottom of gradient temperature estimation
+    l_s = 0.01312 * (((temp_int + temp_top) / 2) - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the side, [W], h = 1.545 in
+    #print(l_s)
+    loss = l_bo + l_ba + l_s                                    # total loss
+    leftover = q - loss                                         # leftover after loss
+    qpa = leftover / 25.8064                                    # leftover flux
+    print('losses:', q, l_bo, l_ba, l_s, leftover, qpa)
 
     # Thermal Analysis
     if hsn == 1:                                                 # flat plate correlations
