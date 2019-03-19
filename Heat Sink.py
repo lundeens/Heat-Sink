@@ -59,8 +59,8 @@ def hs_analysis(ve, p, hsn, data):
     q = 56.4515  # power supplied to the system for 2.5 W/cm^2 [W]
     l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)  # thermal loss through bottom delrin [W]
     print(l_b)
-    re_d = dens * ve * 0.1016 / visc  # Reynolds Number at width scale [unit-less]
-    s = 2 * math.pi * 0.0381 / (0.93 * math.log(4 / 2) - 0.05)  # shape factor for conduction model, [m]
+    re_d = dens * ve * 0.1016 / visc                             # Reynolds Number at width scale [unit-less]
+    s = 2 * math.pi * 0.0381 / (0.93 * math.log(4 / 2) - 0.05)   # shape factor for conduction model, [m]
     n = k_air * 0.158 * (re_d ** (2 / 3)) * (pr ** (1 / 3)) * 0.0154838 / (s * k_del * 0.1016)  # loss coefficient, [unit-less]
     print(k_air, re_d, pr, s, k_del, n)
     dn = 1
@@ -105,6 +105,15 @@ def hs_analysis(ve, p, hsn, data):
     print(temp_gcu)
 
     # Thermal Analysis
+    if hsn == 1:                                                 # flat plate correlations
+        re = ind.reynolds(ve, dens, g[1], visc)                  # Reynolds number for flat plate
+        nu = 0.037 * (re ** (4 / 5)) * (pr ** (1 / 3))           # Nusselt number for turbulent flow over a flat plate
+        h = nu * k_air / g[1]                                    # heat transfer coefficient, [W/m^2*k]
+        qdp = h * (temp_base - temp_amb)                         # heat flux out the plate, [W/m^2]
+        q = qdp * g[2]                                           # heat rate out the plate, [W]
+        print('Flat Plate Performance (HSN 1): h=', h, ' q''=', qdp, 'q=', q)
+        perf = (nu, h, qdp, q)                                  # performance tuple
+        return perf
     v = list(range(15, 50, 5))                                   # velocity range, [m/s] NEEDS UPDATING
     re = ind.reynolds(v, dens, g[3], visc)                       # Reynolds Number (l_c), [unit-less] @ T_film
     f = ind.darcy(re, g[1], g[0])                                # Darcy Friction Factor, [unit-less]
