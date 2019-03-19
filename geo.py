@@ -8,7 +8,10 @@ import math
 def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins) [m]
     if hsn == 0:
         g_b = (0.0089, 0.0018, 0.0078, 0.0007, 180)
-    if 1 <= hsn <= 15:
+    if hsn == 1:
+        geo_fp = (ra(hsn), 0.0508, 0.00225806)  # (Ra, Lc, A) for flat plate
+        return geo_fp
+    if 2 <= hsn <= 15:
         g_b = (1, 0.13125, 2, .1, 7)
     if hsn > 15:
         return print('heat sink number not recognized (geo.size)')
