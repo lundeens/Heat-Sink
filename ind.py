@@ -15,9 +15,13 @@ def kcu(t):
 
 def reynolds(v, density, diam_hyd, visc_d):  # finds the reynolds number by calling reynolds()
     re = []
-    for i in range(0, len(v)):
-        re.append(density * v[i] * diam_hyd / visc_d)
-    return re
+    if type(v) == list:
+        for i in range(0, len(v)):
+            re.append(density * v[i] * diam_hyd / visc_d)
+        return re
+    else:
+        re = density * v * diam_hyd / visc_d
+        return re
 
 
 def darcy(re, surf_rough, diam_hyd):  # finds the darcy friction factor
