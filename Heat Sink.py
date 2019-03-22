@@ -40,6 +40,16 @@ def hs_analysis(ve, p, hsn, data):
     temp_amb = mean(ambient[t[0]:-1])                           # ambient temperature, [k]
     #print(temp_cu, temp_delb, temp_base, temp_amb)
 
+    # Temperature plots
+    time = numpy.arange(0, len(cu_top_), 1)  # x range, 0 to 4 pi
+    plt.plot(time, cu_top_, 'r', time, cu_midd, 'b', time, cu_bott, 'g', time, cu_base, 'k', time, hs_base, 'c')  # plot the data
+    plt.grid(True, alpha=0.25)  # turn on the grid with light lines
+    plt.legend(('Top', 'Middle', 'Bottom', 'Copper Base', 'Heat Sink Base'), loc='best')
+    plt.xlabel('Time (s)')  # label the plot areas
+    plt.ylabel('Temperature (k)')
+    plt.title('Temperature of the Copper Block Over Time')
+    plt.show()
+
     # base, ambient temp [k], atmospheric pressure [mb] (https://w1.weather.gov/obhistory/KCVO.html), heat sink #
     # fluid & solid thermal properties
     dt = temp_base - temp_amb                                    # temp difference between base and ambient, [k]
@@ -56,16 +66,16 @@ def hs_analysis(ve, p, hsn, data):
 
     # Thermal Loss
     q = 56.4515  # power supplied to the system for 2.5 W/cm^2 [W]
-    # l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)  # thermal loss through bottom delrin [W]
+    # l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)    # thermal loss through bottom delrin [W]
     # loss out the bottom
     temp_film_bo = (temp_delb + temp_amb) / 2                        # film temperature at bottom, [k]
-    k_air_bo = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')     # thermal conductivity of air, [W/m*k]
+    k_air_bo = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')    # thermal conductivity of air, [W/m*k]
     rho_bo = PropsSI('D', 'T', temp_film_bo, 'P', p*100, 'Air')      # density of air, [kg/m^3]
     cp_bo = PropsSI('CP0MASS', 'T', temp_film_bo, 'P', p*100, 'Air') # specific heat of air, [J/kg*k]
-    alpha_bo = k_air_bo / (rho_bo * cp_bo)                          # thermal diffusivity, [m^2/s]
+    alpha_bo = k_air_bo / (rho_bo * cp_bo)                           # thermal diffusivity, [m^2/s]
     kvisc_bo = PropsSI('V', 'T', temp_film_bo, 'P', p*100, 'Air') / rho_bo  # kinematic viscosity of air, [m^2/s]
     ra = 9.81 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 3) / (alpha_bo * kvisc_bo)  # Rayleigh number [unit-less]
-    h_bo = 0.52 * k_air_bo * (ra ** (1 / 5)) / 0.0508                 # convective heat transfer coefficient, [W/m^2*k]
+    h_bo = 0.52 * k_air_bo * (ra ** (1 / 5)) / 0.0508                # convective heat transfer coefficient, [W/m^2*k]
     l_bo = 0.00258064 * (temp_cu - temp_amb) / ((1 / h_bo) + (0.0127 / k_del))  # loss through bottom delrin [W]
     #print(l_bo)
     # loss out the base
@@ -85,9 +95,9 @@ def hs_analysis(ve, p, hsn, data):
     temp_top = tgrad * 0.064567 + temp_int  # 2.542 in                # bottom of gradient temperature estimation
     l_s = 0.01312 * (((temp_int + temp_top) / 2) - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the side, [W], h = 1.545 in
     #print(l_s)
-    loss = l_bo + l_ba + l_s                                    # total loss
-    leftover = q - loss                                         # leftover after loss
-    qpa = leftover / 25.8064                                    # leftover flux
+    loss = l_bo + l_ba + l_s                                     # total loss
+    leftover = q - loss                                          # leftover after loss
+    qpa = leftover / 25.8064                                     # leftover flux
     print('losses:', q, l_bo, l_ba, l_s, leftover, qpa)
 
     # Thermal Analysis
@@ -97,8 +107,8 @@ def hs_analysis(ve, p, hsn, data):
         h = nu * k_air / g[1]                                    # heat transfer coefficient, [W/m^2*k]
         qdp = h * (temp_base - temp_amb)                         # heat flux out the plate, [W/m^2]
         q = qdp * g[2]                                           # heat rate out the plate, [W]
-        print('Flat Plate Performance (HSN 1): h=', h, ' q''=', qdp, 'q=', q)
-        perf = (nu, h, qdp, q)                                  # performance tuple
+        print('Flat Plate Performance (HSN 1): h=', h, ' qdp=', qdp, 'q=', q)
+        perf = (nu, h, qdp, q)                                   # performance tuple
         return perf
     v = list(range(15, 50, 5))                                   # velocity range, [m/s] NEEDS UPDATING
     re = ind.reynolds(v, dens, g[3], visc)                       # Reynolds Number (l_c), [unit-less] @ T_film
@@ -113,24 +123,34 @@ def hs_analysis(ve, p, hsn, data):
     res_fin = ind.rfin(dt, qf)                                   # single fin resistance, [k/W]
     res_base = ind.rbase(coeff_hx, g[4])                         # base resistance, [k/W]
     qtot = ind.q_tot(g[7], eta, coeff_hx, g[6], dt, g[8])        # total heat transfer, [W]
-    etao = ind.eta_o(qtot, coeff_hx, g[9], dt)                   # overall efficiency, [unit-less]
+    eta_o = ind.eta_o(qtot, coeff_hx, g[9], dt)                  # overall efficiency, [unit-less]
     res_o = ind.roverall(dt, qtot)                               # overall resistance, [k/W]
 
-    # plots
-    time = numpy.arange(0, len(cu_top_), 1)  # x range, 0 to 4 pi
-    plt.plot(time, cu_top_, 'r', time, cu_midd, 'b', time, cu_bott, 'g', time, cu_base, 'k', time, hs_base, 'c')  # plot the data
+    # Efficiency plot
+    plt.plot(v, eta, 'r', v, eta_o, 'b')  # plot the data
+    #plt.errorbar()  # https://matplotlib.org/api/_as_gen/matplotlib.pyplot.errorbar.html
     plt.grid(True, alpha=0.25)  # turn on the grid with light lines
-    plt.legend(('Top', 'Middle', 'Bottom', 'Copper Base', 'Heat Sink Base'), loc='best')
-    plt.xlabel('Time (s)')  # label the plot areas
-    plt.ylabel('Temperature (k)')
-    plt.title('Temperature of the Copper Block Over Time')
+    plt.legend(('Fin Efficiency', 'Overall Efficiency'), loc='best')
+    plt.xlabel('Velocity (m/s)')  # label the plot areas
+    plt.ylabel('Efficiency')
+    plt.title('Efficiency vs Air Speed')
     plt.show()
-    return etao, eta, res_o
+
+    # Resistance plot
+    plt.plot(v, res_fin, 'r', v, res_o, 'b')  # plot the data
+    plt.grid(True, alpha=0.25)  # turn on the grid with light lines
+    plt.legend(('Fin Resistance', 'Overall Resistance'), loc='best')
+    plt.xlabel('Velocity (m/s)')  # label the plot areas
+    plt.ylabel('Resistance [k/W]')
+    plt.title('Thermal Resistance vs Air Speed')
+    plt.show()
+    return eta, eta_o, res_fin, res_o
 
 
 if __name__ == '__main__':
-    #  (ve, temp_dels, p, hsn, data)
+    #  (airspeed, pressure, heat sink number, data)
     e = hs_analysis(8.9408, 1016.2, 2, '0_20_02-28-2019_1129_Lundeen.csv')
+    print(e)
 
 
 
