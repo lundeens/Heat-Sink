@@ -8,46 +8,49 @@ import pandas
 import geo
 import ind
 from statistics import mean
+import datetime
 import matplotlib.pyplot as plt
 import numpy
 
 
-def hs_analysis(ve, p, hsn, data):
+def hs_analysis(ve, p, hsn, ps, rdata):
 
     # import data
-    data = pandas.read_csv(data)                                 # read the function input
-    cu_top_ = data['Channel 2'].values                           # store the temperature in a list
-    cu_midd = data['Channel 3'].values
-    cu_bott = data['Channel 4'].values
-    cu_left = data['Channel 5'].values
-    cu_back = data['Channel 6'].values
-    cu_righ = data['Channel 7'].values
-    cu_fron = data['Channel 8'].values
-    de_bott = data['Channel 9'].values
-    hs_base = data['Channel 10'].values
-    ambient = data['Channel 11'].values
+    data = pandas.read_csv(rdata)                                # read the function input
+    cu_top_ = data['top'].values                                # store the temperature in a list
+    cu_midd = data['middle'].values
+    cu_bott = data['bottom'].values
+    cu_left = data['left'].values
+    cu_back = data['back'].values
+    cu_righ = data['right'].values
+    cu_fron = data['front'].values
+    de_bott = data['de_bottom'].values
+    hs_base = data['base'].values
+    ambient = data['ambient'].values
 
     t = []
     for i in range(1, len(cu_top_) - 301):                      # find the steady state values of the data
-        if abs(cu_top_[i] - cu_top_[i + 300]) <= 0.01:
+        if abs(cu_top_[i] - cu_top_[i + 300]) <= 0.1:
             t.append(i)
+    #print(t)
 
-    tcl = mean(cu_left[t[0]:-1])                                # left copper base temp, [k]
-    tcb = mean(cu_back[t[0]:-1])                                # back copper base temp, [k]
-    tcr = mean(cu_righ[t[0]:-1])                                # right copper base temp, [k]
-    tcf = mean(cu_fron[t[0]:-1])                                # front copper base temp, [k]
-    temp_cu = (tcl + tcb + tcr + tcf) / 4                       # base temperature of copper, [k]
-    temp_cu_top_ = mean(cu_top_[t[0]:-1])                       # top temperature in copper, [k]
-    temp_cu_midd = mean(cu_midd[t[0]:-1])                       # middle temperature in copper, [k]
-    temp_cu_bott = mean(cu_bott[t[0]:-1])                       # bottom temperature in copper, [k]
-    temp_delb = mean(de_bott[t[0]:-1])                          # bottom of delrin temperature, [k]
-    temp_base = mean(hs_base[t[0]:-1])                          # heat sink base temperature, [k]
-    temp_amb = mean(ambient[t[0]:-1])                           # ambient temperature, [k]
+    tcl = mean(cu_left[0:-1])                                   # left copper base temp, [k]
+    tcb = mean(cu_back[0:-1])                                   # back copper base temp, [k]
+    tcr = mean(cu_righ[0:-1])                                   # right copper base temp, [k]
+    tcf = mean(cu_fron[0:-1])                                   # front copper base temp, [k]
+    temp_cu = (tcl + tcb + tcf) / 3                             # base temperature of copper, [k]
+    temp_cu_top_ = mean(cu_top_[0:-1])                          # top temperature in copper, [k]
+    temp_cu_midd = mean(cu_midd[0:-1])                          # middle temperature in copper, [k]
+    temp_cu_bott = mean(cu_bott[0:-1])                          # bottom temperature in copper, [k]
+    temp_delb = mean(de_bott[0:-1])                             # bottom of delrin temperature, [k]
+    temp_base = mean(hs_base[0:-1])                             # heat sink base temperature, [k]
+    temp_amb = mean(ambient[0:-1])                              # ambient temperature, [k]
     #print(temp_cu, temp_delb, temp_base, temp_amb)
 
     # Uncertainties
     u_p_v = 0.27627                                               # velocity prec unc, [m/s] [verified]
-    # u_b_v =                                                       velocity bias unc, [m/s]
+    u_b_v = 0.22352                                               # velocity bias unc, [m/s]
+    u_v = math.sqrt(u_p_v ** 2 + u_b_v ** 2)                      # velocity unc, [m/s]
     u_b_st = 0.1                                                  # standard bias uncertainty, all but base, [k]
     u_b_temp_base = 0.1                                           # base temp bias uncertainty, [k]
     # u_p_tcf =                                                     # front copper tc prec unc, [k]
@@ -63,14 +66,17 @@ def hs_analysis(ve, p, hsn, data):
     # u_cu = 0.25 * math.sqrt(19.36 + u_p_tcf ** 2 + u_p_tcr ** 2 + u_p_tcb ** 2 + u_p_tcl ** 2)  # avg cu tc unc, [k]
 
     # Temperature plots
-    time = numpy.arange(0, len(cu_top_), 1)  # x range, 0 to 4 pi
-    plt.plot(time, cu_top_, 'r', time, cu_midd, 'b', time, cu_bott, 'g', time, cu_base, 'k', time, hs_base, 'c')
-    plt.grid(True, alpha=0.25)  # turn on the grid with light lines
-    plt.legend(('Top', 'Middle', 'Bottom', 'Copper Base', 'Heat Sink Base'), loc='best')
-    plt.xlabel('Time (s)')  # label the plot areas
-    plt.ylabel('Temperature (k)')
-    plt.title('Temperature of the Copper Block Over Time')
-    plt.show()
+    # time = numpy.arange(0, len(cu_top_), 1)  # x range
+    # print(len(time))
+    # print(type(cu_top_))
+
+    # plt.plot(time, cu_top_, 'r', time, cu_midd, 'b', time, cu_bott, 'g', time, temp_cu, 'k', time, hs_base, 'c')
+    # plt.grid(True, alpha=0.25)  # turn on the grid with light lines
+    # plt.legend(('Top', 'Middle', 'Bottom', 'Copper Base', 'Heat Sink Base'), loc='best')
+    # plt.xlabel('Time (s)')  # label the plot areas
+    # plt.ylabel('Temperature (k)')
+    # plt.title('Temperature of the Copper Block Over Time')
+    # plt.show()
 
     # base, ambient temp [k], atmospheric pressure [mb] (https://w1.weather.gov/obhistory/KCVO.html), heat sink #
     # fluid & solid thermal properties
@@ -97,7 +103,6 @@ def hs_analysis(ve, p, hsn, data):
     g, u_g = geo.size(hsn)                                           # geometry and geometric uncertainties
 
     # Thermal Loss
-    q = 56.4515  # power supplied to the system for 2.5 W/cm^2 [W]
     # l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)    # thermal loss through bottom delrin [W]
     # loss out the bottom
     temp_film_bo = (temp_delb + temp_amb) / 2                        # film temperature at bottom, [k]
@@ -109,28 +114,28 @@ def hs_analysis(ve, p, hsn, data):
     ra = 9.81 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 3) / (alpha_bo * kvisc_bo)  # Rayleigh number [unit-less]
     h_bo = 0.52 * k_air_bo * (ra ** (1 / 5)) / 0.0508                # convective heat transfer coefficient, [W/m^2*k]
     l_bo = 0.00258064 * (temp_cu - temp_amb) / ((1 / h_bo) + (0.0127 / k_del))  # loss through bottom delrin [W]
-    #print(l_bo)
+
     # loss out the base
     k_air_ba = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')     # thermal conductivity of air, [W/m*k]
     pr_ba = PropsSI('Prandtl', 'T', temp_film_bo, 'P', p*100, 'Air')  # Prandtl number, [unit-less]
     re_ba = dens * ve * 0.1016 / visc                                 # Reynolds number at the base, [unit-less]
-    h_ba = k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) / 0.508  # heat transfer coefficient [W/m^2*k]
+    h_ba = k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) / 0.0508  # heat transfer coefficient [W/m^2*k]
     l_ba = 0.007974 * (temp_cu - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the base, [W]
-    #print(l_ba)
+
     # loss out the fourier section
     topgrad = (temp_cu_top_ - temp_cu_midd) / 0.018999  # 0.748 in    # map out temperature gradients and average them
     bottomgrad = (temp_cu_midd - temp_cu_bott) / 0.019075  # 0.751 in # to create a reference gradient that will be used
     fullgrad = (temp_cu_top_ - temp_cu_bott) / 0.038075  # 1.499 in   # to find the average temperature on the side
     tgrad = (topgrad + bottomgrad + fullgrad) / 3
-    # print(topgrad, bottomgrad, fullgrad, tgrad)
     temp_int = temp_cu_midd - tgrad * 0.037313  # 1.469 in            # top surface temperature estimation
     temp_top = tgrad * 0.064567 + temp_int  # 2.542 in                # bottom of gradient temperature estimation
     l_s = 0.01312 * (((temp_int + temp_top) / 2) - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the side, [W], h = 1.545 in
-    #print(l_s)
     loss = l_bo + l_ba + l_s                                     # total loss
-    leftover = q - loss                                          # leftover after loss
-    qpa = leftover / 25.8064                                     # leftover flux
-    print('losses:', q, l_bo, l_ba, l_s, leftover, qpa)
+    leftover = ps - loss                                         # leftover after loss
+    print(leftover)
+    qpa = leftover / 22.5086                                        # leftover flux
+    print(qpa)
+    # print('losses:', q, l_bo, l_ba, l_s, leftover, qpa)
 
     # Thermal Analysis
     if hsn == 1:                                                 # flat plate correlations
@@ -151,10 +156,10 @@ def hs_analysis(ve, p, hsn, data):
         q = qdp * g[2]                                           # heat rate out the plate, [W]
         # u_q = math.sqrt((u_qdp * g[2]) ** 2 + (qdp * g[3]) ** 2)  # q unc, [W]
         print('Flat Plate Performance (HSN 1): h=', h, ' qdp=', qdp, 'q=', q)
-        perf = (nu, h, qdp, q)                                   # performance tuple
-        return perf
-    v = list(range(15, 50, 5))                                   # velocity range, [m/s] NEEDS UPDATING
-    re = ind.reynolds(v, dens, g[3], visc)                       # Reynolds Number (l_c), [unit-less] @ T_amb
+        perf = (re, nu, h, qdp, q)                                   # performance tuple
+        # unc = (u_re, u_nu, u_h, u_qdp, u_q)                          # uncertainty tuple
+        return perf                                # velocity range, [m/s] NEEDS UPDATING
+    re = ind.reynolds(ve, dens, g[3], visc)                       # Reynolds Number (l_c), [unit-less] @ T_amb
     # u_re_v = 2 * dens * g[3] * math.sqrt(u_p_v ** 2 + u_b_v ** 2) / visc  # v partial for re unc, [unit-less]
     # u_re_dens = 2 * v * g[3] * u_dens / visc                              # dens partial for re unc, [unit-less]
     # u_re_s = 2 * dens * v * u_g[4] / visc                                 # s partial for re unc, [unit-less]
@@ -204,6 +209,7 @@ def hs_analysis(ve, p, hsn, data):
     # u_res_fin = math.sqrt((u_dt / qf) ** 2 + (dt * u_qf / (qf ** 2)) ** 2)  # res_fin unc, [k/W]
     # res_base = ind.rbase(coeff_hx, g[4])                         # base resistance, [k/W], OBSOLETE
     qtot = ind.q_tot(g[7], eta, coeff_hx, g[6], dt, g[8])        # total heat transfer, [W]
+    print(qtot)
     # u_qtot_eta = g[7] * coeff_hx * g[6] * dt * u_eta  # eta partial for qtot unc, [?]
     # u_qtot_coeff_hx = (g[7] * eta * g[6] * dt + g[8] * dt) * u_coeff_hx  # coeff_hx partial for qtot unc, [?]
     # u_qtot_dt = (g[7] * eta * coeff_hx * g[6] + coeff_hx * g[8]) * u_dt  # dt partial for qtot unc, [?]
@@ -216,33 +222,59 @@ def hs_analysis(ve, p, hsn, data):
     # u_eta_o_dt = qtot * u_dt / (g[9] * coeff_hx * dt ** 2)            # dt partial for eta_o unc, [?]
     # u_eta_o = math.sqrt(u_eta_o_qtot ** 2 + u_eta_o_coeff_hx ** 2 + u_eta_o_dt ** 2 + u_eta_o_a_tot ** 2)  # eta_o unc, [unit-less]
     res_o = ind.roverall(dt, qtot)                               # overall resistance, [k/W]
+    print(res_o)
     # u_res_fin = math.sqrt((u_dt / qtot) ** 2 + (dt * u_qtot / (qtot ** 2)) ** 2)  # res_o unc, [k/W]
 
     # Efficiency plot
-    plt.plot(v, eta, 'r', v, eta_o, 'b')  # plot the data
+    # plt.plot(v, eta, 'r', v, eta_o, 'b')  # plot the data
     #plt.errorbar()  # https://matplotlib.org/api/_as_gen/matplotlib.pyplot.errorbar.html
-    plt.grid(True, alpha=0.25)  # turn on the grid with light lines
-    plt.legend(('Fin Efficiency', 'Overall Efficiency'), loc='best')
-    plt.xlabel('Velocity (m/s)')  # label the plot areas
-    plt.ylabel('Efficiency')
-    plt.title('Efficiency vs Air Speed')
-    plt.show()
+    # plt.grid(True, alpha=0.25)  # turn on the grid with light lines
+    # plt.legend(('Fin Efficiency', 'Overall Efficiency'), loc='best')
+    # plt.xlabel('Velocity (m/s)')  # label the plot areas
+    # plt.ylabel('Efficiency')
+    # plt.title('Efficiency vs Air Speed')
+    # plt.show()
 
     # Resistance plot
-    plt.plot(v, res_fin, 'r', v, res_o, 'b')  # plot the data
-    plt.grid(True, alpha=0.25)  # turn on the grid with light lines
-    plt.legend(('Fin Resistance', 'Overall Resistance'), loc='best')
-    plt.xlabel('Velocity (m/s)')  # label the plot areas
-    plt.ylabel('Resistance [k/W]')
-    plt.title('Thermal Resistance vs Air Speed')
-    plt.show()
-    return eta, eta_o, res_fin, res_o
+    # plt.plot(v, res_fin, 'r', v, res_o, 'b')  # plot the data
+    # plt.grid(True, alpha=0.25)  # turn on the grid with light lines
+    # plt.legend(('Fin Resistance', 'Overall Resistance'), loc='best')
+    # plt.xlabel('Velocity (m/s)')  # label the plot areas
+    # plt.ylabel('Resistance [k/W]')
+    # plt.title('Thermal Resistance vs Air Speed')
+    # plt.show()
+
+    id = (hsn, ve, re, p, ps, leftover, qpa)
+    pe = (nu, coeff_hx, qf, qtot, eff, eta, eta_o, res_fin, res_o)
+    # un = (u_ve, u_re, u_nu, u_coeff_hx, u_qf, u_qtot, u_eff, u_eta, u_eta_o, u_res_fin, u_res_o)
+
+    now = datetime.datetime.now()
+    dfa = pandas.DataFrame({"File Name": [rdata],
+                            "hsn": [hsn],
+                            "ve (m/s)": [ve],
+                            "Re": [re],
+                            "P (mb)": [p],
+                            "ps (W)": [ps],
+                            "leftover (W)": [leftover],
+                            "q'' (W/m^2)": [qpa],
+                            "Nu": [nu],
+                            "h (W/m^2*k)": [coeff_hx],
+                            "q_fin (W)": [qf],
+                            "q_tot (W)": [qtot],
+                            "eff": [eff],
+                            "eta": [eta],
+                            "eta_o": [eta_o],
+                            "R_fin (k/W)": [res_fin],
+                            "R_0 (k/W)": [res_o]})
+    with open('Record.csv', 'a') as f:
+        dfa.to_csv(f, header=False, index=False)
+    return id, pe
 
 
 if __name__ == '__main__':
-    #  (airspeed, pressure, heat sink number, data)
-    e = hs_analysis(8.9408, 1016.2, 2, '0_20_02-28-2019_1129_Lundeen.csv')
-    print(e)
+    #  (airspeed [m/s], pressure [mb], heat sink number, power supplied [W], data)
+    e = hs_analysis(31.69, 1030.3, 2, 50.8, '2_14k_03-29-2019_2205_1030-3_Lundeen.csv')
+
 
 
 
