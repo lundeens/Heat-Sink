@@ -48,7 +48,7 @@ def hs_analysis(ve, p, hsn, ps, rdata):
     #print(temp_cu, temp_delb, temp_base, temp_amb)
 
     # Uncertainties
-    u_p_v = 0.27627                                               # velocity prec unc, [m/s] [verified]
+    u_p_v = 0.027627                                              # velocity prec unc, [m/s] [verified]
     u_b_v = 0.22352                                               # velocity bias unc, [m/s]
     u_v = math.sqrt(u_p_v ** 2 + u_b_v ** 2)                      # velocity unc, [m/s]
     u_b_st = 0.1                                                  # standard bias uncertainty, all but base, [k]
@@ -82,19 +82,24 @@ def hs_analysis(ve, p, hsn, ps, rdata):
     # fluid & solid thermal properties
     dt = temp_base - temp_amb                                    # temp difference between base and ambient, [k]
     # u_dt = math.sqrt((u_b_temp_base ** 2) + (u_p_tba ** 2) + (u_b_st ** 2) + (u_p_tam ** 2))
+    u_dt = math.sqrt((u_b_temp_base ** 2) + (u_b_st ** 2))
     temp_film = (temp_base + temp_amb) / 2                       # film temperature, [k]
     # u_temp_film = 0.5 * math.sqrt((u_b_temp_base ** 2) + (u_p_tba ** 2) + (u_b_st ** 2) + (u_p_tam ** 2))
+    u_temp_film = 0.5 * math.sqrt((u_b_temp_base ** 2) + (u_b_st ** 2))
     k_al = ind.kal(temp_base)                                    # thermal conductivity of aluminum @ base_temp, [W/m*k]
     # u_k_al = max(abs(ind.kal(temp_base) - ind.kal(temp_base + math.sqrt((u_b_temp_base ** 2) + (u_p_tba ** 2)))), abs(ind.kal(temp_base) - ind.kal(temp_base - math.sqrt((u_b_temp_base ** 2) + (u_p_tba ** 2)))))
+    u_k_al = max(abs(ind.kal(temp_base) - ind.kal(temp_base + math.sqrt((u_b_temp_base ** 2)))), abs(ind.kal(temp_base) - ind.kal(temp_base - math.sqrt((u_b_temp_base ** 2)))))
     k_air = PropsSI('L', 'T', temp_film, 'P', p*100, 'Air')      # thermal conductivity of air @ temp_film, [W/m*k]
-    # u_k_air = max(abs(PropsSI('L', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film + u_temp_film, 'P', p*100, 'Air')), abs(PropsSI('L', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film - u_temp_film, 'P', p*100, 'Air')))
+    u_k_air = max(abs(PropsSI('L', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film + u_temp_film, 'P', p*100, 'Air')), abs(PropsSI('L', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film - u_temp_film, 'P', p*100, 'Air')))
     k_del = 0.4                                                  # thermal conductivity of delrin, [W/m*k]
     dens = PropsSI('D', 'T', temp_amb, 'P', p*100, 'Air')        # air density @ temp_amb, [kg/m^3]
     # u_dens = max(abs(PropsSI('D', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('D', 'T', temp_amb + math.sqrt((u_b_st ** 2) + (u_p_tam ** 2)), 'P', p*100, 'Air')), abs(PropsSI('D', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('D', 'T', temp_amb - math.sqrt((u_b_st ** 2) + (u_p_tam ** 2)), 'P', p*100, 'Air')))
+    u_dens = max(abs(PropsSI('D', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('D', 'T', temp_amb + math.sqrt((u_b_st ** 2)), 'P', p*100, 'Air')), abs(PropsSI('D', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('D', 'T', temp_amb - math.sqrt((u_b_st ** 2)), 'P', p*100, 'Air')))
     visc = PropsSI('V', 'T', temp_amb, 'P', p*100, 'Air')        # air dynamic viscosity mu @ temp_amb, [N*s/m^2]
     # u_visc = max(abs(PropsSI('V', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('V', 'T', temp_amb + math.sqrt((u_b_st ** 2) + (u_p_tam ** 2)), 'P', p*100, 'Air')), abs(PropsSI('V', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('V', 'T', temp_amb - math.sqrt((u_b_st ** 2) + (u_p_tam ** 2)), 'P', p*100, 'Air')))
+    u_visc = max(abs(PropsSI('V', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('V', 'T', temp_amb + math.sqrt((u_b_st ** 2)), 'P', p*100, 'Air')), abs(PropsSI('V', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('V', 'T', temp_amb - math.sqrt((u_b_st ** 2)), 'P', p*100, 'Air')))
     pr = PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air')   # Prandtl Number @ temp_film, [unit-less]
-    # u_pr = max(abs(PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('Prandtl', 'T', temp_film + u_temp_film, 'P', p*100, 'Air')), abs(PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('Prandtl', 'T', temp_film - u_temp_film, 'P', p*100, 'Air')))
+    u_pr = max(abs(PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('Prandtl', 'T', temp_film + u_temp_film, 'P', p*100, 'Air')), abs(PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('Prandtl', 'T', temp_film - u_temp_film, 'P', p*100, 'Air')))
 
 
     # Heat Sink Geometry
@@ -132,9 +137,7 @@ def hs_analysis(ve, p, hsn, ps, rdata):
     l_s = 0.01312 * (((temp_int + temp_top) / 2) - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the side, [W], h = 1.545 in
     loss = l_bo + l_ba + l_s                                     # total loss
     leftover = ps - loss                                         # leftover after loss
-    print(leftover)
     qpa = leftover / 22.5086                                        # leftover flux
-    print(qpa)
     # print('losses:', q, l_bo, l_ba, l_s, leftover, qpa)
 
     # Thermal Analysis
@@ -160,70 +163,88 @@ def hs_analysis(ve, p, hsn, ps, rdata):
         # unc = (u_re, u_nu, u_h, u_qdp, u_q)                          # uncertainty tuple
         return perf                                # velocity range, [m/s] NEEDS UPDATING
     re = ind.reynolds(ve, dens, g[3], visc)                       # Reynolds Number (l_c), [unit-less] @ T_amb
-    # u_re_v = 2 * dens * g[3] * math.sqrt(u_p_v ** 2 + u_b_v ** 2) / visc  # v partial for re unc, [unit-less]
-    # u_re_dens = 2 * v * g[3] * u_dens / visc                              # dens partial for re unc, [unit-less]
-    # u_re_s = 2 * dens * v * u_g[4] / visc                                 # s partial for re unc, [unit-less]
-    # u_re_visc = 2 * dens * v * g[3] * u_visc / (visc ** 2)                # visc partial for re unc, [unit-less]
-    # u_re = math.sqrt(u_re_v ** 2 + u_re_dens ** 2 + u_re_s ** 2 + u_re_visc ** 2)  # re unc, [unit-less]
+    u_re_v = 2 * dens * g[3] * math.sqrt(u_v ** 2) / visc  # v partial for re unc, [unit-less]
+    u_re_dens = 2 * ve * g[3] * u_dens / visc                              # dens partial for re unc, [unit-less]
+    u_re_s = 2 * dens * ve * u_g[4] / visc                                 # s partial for re unc, [unit-less]
+    u_re_visc = 2 * dens * ve * g[3] * u_visc / (visc ** 2)                # visc partial for re unc, [unit-less]
+    u_re = math.sqrt(u_re_v ** 2 + u_re_dens ** 2 + u_re_s ** 2 + u_re_visc ** 2)  # re unc, [unit-less]
+
     f = ind.darcy(re, g[1], g[0])                                # Darcy Friction Factor, [unit-less]
-    # u_f_d_h = 0.0538387 * re * g[1] * math.sqrt(f) * u_g[0] / (g[0] * (g[0] + 0.107677 * re * g[1] * math.sqrt(f)) * (math.log10(g[1] / (3.7 * g[0]) + 2.51 / (re * math.sqrt(f))) ** 3))  # d_h partial for f unc [unit-less]
-    # u_f_re = 2.65095 * g[0] * u_re / (g[0] * (g[0] + 0.107677 * re * g[1] * math.sqrt(f)) * (math.log10(g[1] / (3.7 * g[0]) + 2.51 / (re * math.sqrt(f))) ** 3))  # re partial for f unc, [unit-less]
-    # u_f = math.sqrt(u_f_d_h ** 2 + u_f_re ** 2)                  # f unc, [unit-less]
-    nu = ind.nusselt(f, re, pr)                                  # Nusselt Number, internal pipe, [unit-less] @ T_fim
-    # u_nu_f = 0.0139194 * pr * (re - 1000) * (math.sqrt(f) * ((pr ** (2 / 3)) - 1) + 0.44542) * u_f / ((math.sqrt(f) * ((pr ** (2 / 3)) - 1) + 0.22271) ** 2)  # f partial for nu unc, [unit-less]
-    # u_nu_re = f * pr * u_re / (8 * (4.49013 * math.sqrt(f) * ((pr ** (2 / 3)) - 1)) + 1)  # re partial for nu unc [unit-less]
-    # u_nu_pr = 0.00927962 * (re - 1000) * ((f ** (3 / 2)) * ((pr ** (2 / 3)) - 3) + 0.668132 * f) * u_pr / ((math.sqrt(f) * ((pr ** (2 / 3)) - 1) + 0.22271) ** 2)  # pr partial for nu unc, [unit-less]
-    # u_nu = math.sqrt(u_nu_f ** 2 + u_nu_re ** 2 + u_nu_pr ** 2)  # nu unc, [unit-less]
+    u_f_d_h = 0.0538387 * re * g[1] * math.sqrt(f) * u_g[0] / (g[0] * (g[0] + 0.107677 * re * g[1] * math.sqrt(f)) * (math.log10(g[1] / (3.7 * g[0]) + 2.51 / (re * math.sqrt(f))) ** 3))  # d_h partial for f unc [unit-less]
+    u_f_re = 2.65095 * g[0] * u_re / (re * (g[0] + 0.107677 * re * g[1] * math.sqrt(f)) * (math.log10(g[1] / (3.7 * g[0]) + 2.51 / (re * math.sqrt(f))) ** 3))  # re partial for f unc, [unit-less]
+    u_f = math.sqrt(u_f_d_h ** 2 + u_f_re ** 2)                  # f unc, [unit-less]
+
+    nu = ind.nusselt(f, re, pr)                                  # Nusselt Number, internal pipe, [unit-less] @ T_film
+    u_nu_f = 0.0139194 * pr * (re - 1000) * (math.sqrt(f) * ((pr ** (2 / 3)) - 1) + 0.44542) * u_f / ((math.sqrt(f) * ((pr ** (2 / 3)) - 1) + 0.22271) ** 2)  # f partial for nu unc, [unit-less]
+    u_nu_re = f * pr * u_re / (8 * (4.49013 * math.sqrt(f) * ((pr ** (2 / 3)) - 1)) + 1)  # re partial for nu unc [unit-less]
+    u_nu_pr = 0.00927962 * (re - 1000) * ((f ** (3 / 2)) * ((pr ** (2 / 3)) - 3) + 0.668132 * f) * u_pr / ((math.sqrt(f) * ((pr ** (2 / 3)) - 1) + 0.22271) ** 2)  # pr partial for nu unc, [unit-less]
+    u_nu = math.sqrt(u_nu_f ** 2 + u_nu_re ** 2 + u_nu_pr ** 2)  # nu unc, [unit-less]
+
+
     coeff_hx = ind.hxc(nu, k_air, g[3])                          # convective heat transfer coefficient, [h, W/m^2*k]
-    # u_coeff_hx = math.sqrt((k_air * u_nu / g[3]) ** 2 + (nu * u_k_air / g[3]) ** 2 + (nu * k_air * u_g[2] / (g[3] ** 2)) ** 2)  # coeff_hx unc, [W/m^2*k]
+    u_coeff_hx = math.sqrt((k_air * u_nu / g[3]) ** 2 + (nu * u_k_air / g[3]) ** 2 + (nu * k_air * u_g[2] / (g[3] ** 2)) ** 2)  # coeff_hx unc, [W/m^2*k]
+
     m = ind.little_m(coeff_hx, g[2], k_al, g[4])                 # temperature profile constant, [m^-1]
-    # u_m = 0.5 * m * math.sqrt((u_coeff_hx / coeff_hx) ** 2 + (u_g[1] / g[2]) ** 2 + (u_k_al / k_al) ** 2 + (u_g[3] / g[4]) ** 2)  # m unc, [m^-1]
+    u_m = 0.5 * m * math.sqrt((u_coeff_hx / coeff_hx) ** 2 + (u_g[1] / g[2]) ** 2 + (u_k_al / k_al) ** 2 + (u_g[3] / g[4]) ** 2)  # m unc, [m^-1]
+
     em = ind.big_m(coeff_hx, g[2], k_al, g[4], dt)               # fin heat rate constant, [W]
-    # u_em_h = g[2] * k_al * g[4] * dt * u_coeff_hx / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # h partial for em unc, [?]
-    # u_em_p = coeff_hx * k_al * g[4] * dt * u_g[1] / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # p partial for em unc, [?]
-    # u_em_k = g[2] * coeff_hx * g[4] * dt * u_k_al / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # k partial for em unc, [?]
-    # u_em_a_xc = g[2] * k_al * coeff_hx * dt * u_g[3] / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # a_xc partial for em unc, [?]
-    # u_em_dt = math.sqrt(coeff_hx * g[2] * k_al * g[4]) * u_dt  # dt partial for em unc, [?]
-    # u_em = math.sqrt(u_em_h ** 2 + u_em_p ** 2 + u_em_k ** 2 + u_em_a_xc ** 2 + u_em_dt ** 2)
+    u_em_h = g[2] * k_al * g[4] * dt * u_coeff_hx / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # h partial for em unc, [?]
+    u_em_p = coeff_hx * k_al * g[4] * dt * u_g[1] / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # p partial for em unc, [?]
+    u_em_k = g[2] * coeff_hx * g[4] * dt * u_k_al / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # k partial for em unc, [?]
+    u_em_a_xc = g[2] * k_al * coeff_hx * dt * u_g[3] / (2 * math.sqrt(coeff_hx * g[2] * k_al * g[4]))  # a_xc partial for em unc, [?]
+    u_em_dt = math.sqrt(coeff_hx * g[2] * k_al * g[4]) * u_dt  # dt partial for em unc, [?]
+    u_em = math.sqrt(u_em_h ** 2 + u_em_p ** 2 + u_em_k ** 2 + u_em_a_xc ** 2 + u_em_dt ** 2)
+
     qf = ind.q_f(em, m, g[5], coeff_hx, k_al)                    # single fin heat transfer rate, [W]
-    # u_qf_em = math.sinh(m * g[5]) + (coeff_hx / (m * k_al)) * math.cosh(m * g[5]) * u_em / math.cosh(m * g[5]) + (coeff_hx / (m * k_al)) * math.sinh(m * g[5])  # em partial for qf unc, [?]
-    # u_qf_l = em * m * ((m ** 2) - (coeff_hx ** 2) * (k_al ** 2)) * (math.cosh(g[5] * m) ** 2 - math.sinh(g[5] * m) ** 2) * u_g[4] / ((coeff_hx * k_al * math.sinh(g[5] * m) + m * math.cosh(g[5] * m)) ** 2)  # l partial for qf unc, [?]
-    # u_qf_coeff_hx = k_al * em * m * (math.cosh(g[5] * m) ** 2 - math.sinh(g[5] * m) ** 2) * u_coeff_hx / ((coeff_hx * k_al * math.sinh(g[5] * m) + m * math.cosh(g[5] * m)) ** 2)  # coeff_hx partial for qf unc, [?]
-    # u_qf_k = coeff_hx * em * m * (math.cosh(g[5] * m) ** 2 - math.sinh(g[5] * m) ** 2) * u_k_al / ((coeff_hx * k_al * math.sinh(g[5] * m) + m * math.cosh(g[5] * m)) ** 2)  # k_al partial for qf unc, [?]
-    # u_qf_m1 = em * ((-coeff_hx * k_al * math.cosh(g[5] * m) / (m ** 2)) + (coeff_hx * k_al * g[5] * math.sinh(g[5] * m) / m) + (g[5] * math.cosh(g[5] * m))) / ((coeff_hx * k_al * math.sinh(g[5] * m) / m) + math.cosh(g[5] * m))  # first part of m partial for qf unc, [?]
-    # u_qf_m2 = em * ((coeff_hx * k_al * math.cosh(g[5] * m) / m) + math.sinh(g[5] * m))((-coeff_hx * k_al * math.sinh(g[5] * m) / (m ** 2)) + (coeff_hx * k_al * g[5] * math.cosh(g[5] * m) / m) + (g[5] * math.sinh(g[5] * m))) / (((coeff_hx * k_al * math.sinh(g[5] * m) / m) + math.cosh(g[5] * m)) ** 2)  # 2nd part of m partial for qf unc, [?]
-    # u_qf_m = (u_qf_m1 - u_qf_m2) * u_m                           # m partial for qf unc, [?]
-    # u_qf = math.sqrt(u_qf_em ** 2 + u_qf_l ** 2 + u_qf_coeff_hx ** 2 + u_qf_k ** 2 + u_qf_m ** 2)
+    print(qf)
+    u_qf_em = math.sinh(m * g[5]) + (coeff_hx / (m * k_al)) * math.cosh(m * g[5]) * u_em / math.cosh(m * g[5]) + (coeff_hx / (m * k_al)) * math.sinh(m * g[5])  # em partial for qf unc, [?]
+    u_qf_l = em * m * ((m ** 2) - (coeff_hx ** 2) * (k_al ** 2)) * (math.cosh(g[5] * m) ** 2 - math.sinh(g[5] * m) ** 2) * u_g[4] / ((coeff_hx * k_al * math.sinh(g[5] * m) + m * math.cosh(g[5] * m)) ** 2)  # l partial for qf unc, [?]
+    u_qf_coeff_hx = k_al * em * m * (math.cosh(g[5] * m) ** 2 - math.sinh(g[5] * m) ** 2) * u_coeff_hx / ((coeff_hx * k_al * math.sinh(g[5] * m) + m * math.cosh(g[5] * m)) ** 2)  # coeff_hx partial for qf unc, [?]
+    u_qf_k = coeff_hx * em * m * (math.cosh(g[5] * m) ** 2 - math.sinh(g[5] * m) ** 2) * u_k_al / ((coeff_hx * k_al * math.sinh(g[5] * m) + m * math.cosh(g[5] * m)) ** 2)  # k_al partial for qf unc, [?]
+    u_qf_m1 = em * ((-coeff_hx * k_al * math.cosh(g[5] * m) / (m ** 2)) + (coeff_hx * k_al * g[5] * math.sinh(g[5] * m) / m) + (g[5] * math.cosh(g[5] * m))) / ((coeff_hx * k_al * math.sinh(g[5] * m) / m) + math.cosh(g[5] * m))  # first part of m partial for qf unc, [?]
+    u_qf_m2 = em * ((coeff_hx * k_al * math.cosh(g[5] * m) / m) + math.sinh(g[5] * m)) * ((-coeff_hx * k_al * math.sinh(g[5] * m) / (m ** 2)) + (coeff_hx * k_al * g[5] * math.cosh(g[5] * m) / m) + (g[5] * math.sinh(g[5] * m))) / (((coeff_hx * k_al * math.sinh(g[5] * m) / m) + math.cosh(g[5] * m)) ** 2)  # 2nd part of m partial for qf unc, [?]
+    u_qf_m = (u_qf_m1 - u_qf_m2) * u_m                           # m partial for qf unc, [?]
+    u_qf = math.sqrt(u_qf_em ** 2 + u_qf_l ** 2 + u_qf_coeff_hx ** 2 + u_qf_k ** 2 + u_qf_m ** 2)
+    print(u_qf_m2)
+    print(u_qf)
+
     eff = ind.effectiveness(qf, coeff_hx, g[4], dt)              # fin effectiveness, [unit-less]
-    # u_eff_qf = u_qf / (coeff_hx * g[4] * dt)                      # qf partial for eff unc, [?]
-    # u_eff_coeff_hx = qf * u_coeff_hx / (g[4] * dt * coeff_hx ** 2)  # coeff_hx partial for eff unc, [?]
-    # u_eff_a_xc = qf * u_g[3] / (coeff_hx * dt * g[4] ** 2)        # a_xc partial for eff unc, [?]
-    # u_eff_dt = qf * u_dt / (g[4] * coeff_hx * dt ** 2)            # dt partial for eff unc, [?]
-    # u_eff = math.sqrt(u_eff_qf ** 2 + u_eff_coeff_hx ** 2 + u_eff_a_xc ** 2 + u_eff_dt ** 2)  # eff unc, [unit-less]
+    u_eff_qf = u_qf / (coeff_hx * g[4] * dt)                      # qf partial for eff unc, [?]
+    u_eff_coeff_hx = qf * u_coeff_hx / (g[4] * dt * coeff_hx ** 2)  # coeff_hx partial for eff unc, [?]
+    u_eff_a_xc = qf * u_g[3] / (coeff_hx * dt * g[4] ** 2)        # a_xc partial for eff unc, [?]
+    u_eff_dt = qf * u_dt / (g[4] * coeff_hx * dt ** 2)            # dt partial for eff unc, [?]
+    u_eff = math.sqrt(u_eff_qf ** 2 + u_eff_coeff_hx ** 2 + u_eff_a_xc ** 2 + u_eff_dt ** 2)  # eff unc, [unit-less]
+
     eta = ind.efficiency(qf, coeff_hx, g[6], dt)                 # fin efficiency, [unit-less]
-    # u_eta_qf = u_qf / (coeff_hx * g[6] * dt)                      # qf partial for eta unc, [?]
-    # u_eta_coeff_hx = qf * u_coeff_hx / (g[6] * dt * coeff_hx ** 2)  # coeff_hx partial for eta unc, [?]
-    # u_eta_dt = qf * u_dt / (g[6] * coeff_hx * dt ** 2)            # dt partial for eta unc, [?]
-    # u_eta = math.sqrt(u_eta_qf ** 2 + u_eta_coeff_hx ** 2 + u_eta_dt ** 2)  # eta unc, [unit-less]
+    u_eta_qf = u_qf / (coeff_hx * g[6] * dt)                      # qf partial for eta unc, [?]
+    u_eta_coeff_hx = qf * u_coeff_hx / (g[6] * dt * coeff_hx ** 2)  # coeff_hx partial for eta unc, [?]
+    u_eta_dt = qf * u_dt / (g[6] * coeff_hx * dt ** 2)            # dt partial for eta unc, [?]
+    u_eta = math.sqrt(u_eta_qf ** 2 + u_eta_coeff_hx ** 2 + u_eta_dt ** 2)  # eta unc, [unit-less]
+
     res_fin = ind.rfin(dt, qf)                                   # single fin resistance, [k/W]
-    # u_res_fin = math.sqrt((u_dt / qf) ** 2 + (dt * u_qf / (qf ** 2)) ** 2)  # res_fin unc, [k/W]
-    # res_base = ind.rbase(coeff_hx, g[4])                         # base resistance, [k/W], OBSOLETE
+    u_res_fin = math.sqrt((u_dt / qf) ** 2 + (dt * u_qf / (qf ** 2)) ** 2)  # res_fin unc, [k/W]
+
+    res_base = ind.rbase(coeff_hx, g[4])                         # base resistance, [k/W], OBSOLETE
+
     qtot = ind.q_tot(g[7], eta, coeff_hx, g[6], dt, g[8])        # total heat transfer, [W]
     print(qtot)
-    # u_qtot_eta = g[7] * coeff_hx * g[6] * dt * u_eta  # eta partial for qtot unc, [?]
-    # u_qtot_coeff_hx = (g[7] * eta * g[6] * dt + g[8] * dt) * u_coeff_hx  # coeff_hx partial for qtot unc, [?]
-    # u_qtot_dt = (g[7] * eta * coeff_hx * g[6] + coeff_hx * g[8]) * u_dt  # dt partial for qtot unc, [?]
-    # u_qtot_a_base = coeff_hx * dt * u_g[5]  # a_base partial for qtot unc, [?]
-    # u_qtot = math.sqrt(u_qtot_eta ** 2 + u_qtot_coeff_hx ** 2 + u_qtot_dt ** 2 + u_qtot_a_base ** 2)  # qtot unc, [W]
+    u_qtot_eta = g[7] * coeff_hx * g[6] * dt * u_eta  # eta partial for qtot unc, [?]
+    u_qtot_coeff_hx = (g[7] * eta * g[6] * dt + g[8] * dt) * u_coeff_hx  # coeff_hx partial for qtot unc, [?]
+    u_qtot_dt = (g[7] * eta * coeff_hx * g[6] + coeff_hx * g[8]) * u_dt  # dt partial for qtot unc, [?]
+    u_qtot_a_base = coeff_hx * dt * u_g[5]  # a_base partial for qtot unc, [?]
+    u_qtot = math.sqrt(u_qtot_eta ** 2 + u_qtot_coeff_hx ** 2 + u_qtot_dt ** 2 + u_qtot_a_base ** 2)  # qtot unc, [W]
+
     eta_o = ind.eta_o(qtot, coeff_hx, g[9], dt)                  # overall efficiency, [unit-less]
-    # u_eta_o_qtot = u_qtot / (coeff_hx * g[9] * dt)                      # qf partial for eta_o unc, [?]
-    # u_eta_o_coeff_hx = qtot * u_coeff_hx / (g[9] * dt * coeff_hx ** 2)  # coeff_hx partial for eta_o unc, [?]
-    # u_eta_o_a_tot = qtot * u_g[6] / (coeff_hx * dt * g[9] ** 2)
-    # u_eta_o_dt = qtot * u_dt / (g[9] * coeff_hx * dt ** 2)            # dt partial for eta_o unc, [?]
-    # u_eta_o = math.sqrt(u_eta_o_qtot ** 2 + u_eta_o_coeff_hx ** 2 + u_eta_o_dt ** 2 + u_eta_o_a_tot ** 2)  # eta_o unc, [unit-less]
+    u_eta_o_qtot = u_qtot / (coeff_hx * g[9] * dt)                      # qf partial for eta_o unc, [?]
+    u_eta_o_coeff_hx = qtot * u_coeff_hx / (g[9] * dt * coeff_hx ** 2)  # coeff_hx partial for eta_o unc, [?]
+    u_eta_o_a_tot = qtot * u_g[6] / (coeff_hx * dt * g[9] ** 2)
+    u_eta_o_dt = qtot * u_dt / (g[9] * coeff_hx * dt ** 2)            # dt partial for eta_o unc, [?]
+    u_eta_o = math.sqrt(u_eta_o_qtot ** 2 + u_eta_o_coeff_hx ** 2 + u_eta_o_dt ** 2 + u_eta_o_a_tot ** 2)  # eta_o unc, [unit-less]
+
     res_o = ind.roverall(dt, qtot)                               # overall resistance, [k/W]
     print(res_o)
-    # u_res_fin = math.sqrt((u_dt / qtot) ** 2 + (dt * u_qtot / (qtot ** 2)) ** 2)  # res_o unc, [k/W]
+    u_res_o = math.sqrt((u_dt / qtot) ** 2 + (dt * u_qtot / (qtot ** 2)) ** 2)  # res_o unc, [k/W]
+    print(u_res_o)
 
     # Efficiency plot
     # plt.plot(v, eta, 'r', v, eta_o, 'b')  # plot the data
@@ -246,17 +267,20 @@ def hs_analysis(ve, p, hsn, ps, rdata):
 
     id = (hsn, ve, re, p, ps, leftover, qpa)
     pe = (nu, coeff_hx, qf, qtot, eff, eta, eta_o, res_fin, res_o)
-    # un = (u_ve, u_re, u_nu, u_coeff_hx, u_qf, u_qtot, u_eff, u_eta, u_eta_o, u_res_fin, u_res_o)
+    un = (u_v, u_re, u_nu, u_coeff_hx, u_qf, u_qtot, u_eff, u_eta, u_eta_o, u_res_fin, u_res_o)
 
     now = datetime.datetime.now()
     dfa = pandas.DataFrame({"File Name": [rdata],
+                            "Time Entered": [now],
                             "hsn": [hsn],
+                            "Ra": [g[2]],
                             "ve (m/s)": [ve],
                             "Re": [re],
                             "P (mb)": [p],
                             "ps (W)": [ps],
                             "leftover (W)": [leftover],
                             "q'' (W/m^2)": [qpa],
+                            "dTb (k)": [dt],
                             "Nu": [nu],
                             "h (W/m^2*k)": [coeff_hx],
                             "q_fin (W)": [qf],
@@ -265,7 +289,18 @@ def hs_analysis(ve, p, hsn, ps, rdata):
                             "eta": [eta],
                             "eta_o": [eta_o],
                             "R_fin (k/W)": [res_fin],
-                            "R_0 (k/W)": [res_o]})
+                            "R_0 (k/W)": [res_o],
+                            "u_ve": [u_v],
+                            "u_re": [u_re],
+                            "u_nu": [u_nu],
+                            "u_h": [u_coeff_hx],
+                            "u_q_fin": [u_qf],
+                            "u_q_tot": [u_qtot],
+                            "u_eff": [u_eff],
+                            "u_eta": [u_eta],
+                            "u_eta_o": [u_eta_o],
+                            "u_R_fin": [u_res_fin],
+                            "u_R_o": [u_res_o]})
     with open('Record.csv', 'a') as f:
         dfa.to_csv(f, header=False, index=False)
     return id, pe
@@ -273,7 +308,7 @@ def hs_analysis(ve, p, hsn, ps, rdata):
 
 if __name__ == '__main__':
     #  (airspeed [m/s], pressure [mb], heat sink number, power supplied [W], data)
-    e = hs_analysis(31.69, 1030.3, 2, 50.8, '2_14k_03-29-2019_2205_1030-3_Lundeen.csv')
+    e = hs_analysis(31.69, 1016.8, 10, 50.746, '10_14k_04-1-2019_0911_1016-8_Lundeen_50-746.csv')
 
 
 
