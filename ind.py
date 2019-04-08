@@ -14,10 +14,6 @@ def kcu(t):
 
 
 def reynolds(v, density, diam_hyd, visc_d):  # finds the reynolds number by calling reynolds()
-    type(v)
-    type(density)
-    type(diam_hyd)
-    type(visc_d)
     return density * v * diam_hyd / visc_d
 
 
