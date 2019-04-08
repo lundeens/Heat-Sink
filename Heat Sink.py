@@ -13,7 +13,35 @@ import matplotlib.pyplot as plt
 import numpy
 
 
-def hs_analysis(ve, p, hsn, ps, rdata):
+def hs_analysis(rdata):
+
+    parse = rdata.split('_')
+    hsn = int(parse[0])
+    if parse[1] == '14k':
+        ve = 31.69
+    elif parse[1] == '12k':
+        ve = 27.17
+    elif parse[1] == '10k':
+        ve = 22.64
+    elif parse[1] == '8k':
+        ve = 18.11
+    elif parse[1] == '6k':
+        ve = 13.58
+    elif parse[1] == '4k':
+        ve = 9.06
+    else:
+        print('Reynolds number input not recognized.')
+        return ValueError()
+    date = parse[2]
+    time = parse[3]
+    p_parse = parse[4].split('-')
+    if len(p_parse[1]) != 1:
+        return ValueError('second argument of power supplied must have 3 digits: 1014-3 ')
+    p = int(p_parse[0]) + int(p_parse[1]) / 10
+    ps_parse = parse[5].split('-')
+    if len(ps_parse[1]) != 3:
+        return ValueError('second argument of power supplied must have 3 digits: 50-812 ')
+    ps = int(ps_parse[0]) + int(ps_parse[1]) / 1000
 
     # import data
     data = pandas.read_csv(rdata)                                # read the function input
@@ -269,10 +297,11 @@ def hs_analysis(ve, p, hsn, ps, rdata):
     pe = (nu, coeff_hx, qf, qtot, eff, eta, eta_o, res_fin, res_o)
     un = (u_v, u_re, u_nu, u_coeff_hx, u_qf, u_qtot, u_eff, u_eta, u_eta_o, u_res_fin, u_res_o)
 
-    now = datetime.datetime.now()
     dfa = pandas.DataFrame({"File Name": [rdata],
-                            "Time Entered": [now],
+                            "Date": [date],
+                            "Time": [time],
                             "hsn": [hsn],
+                            "A_tot (m^2)": [g[9]],
                             "Ra": [g[2]],
                             "ve (m/s)": [ve],
                             "Re": [re],
@@ -307,8 +336,8 @@ def hs_analysis(ve, p, hsn, ps, rdata):
 
 
 if __name__ == '__main__':
-    #  (airspeed [m/s], pressure [mb], heat sink number, power supplied [W], data)
-    e = hs_analysis(31.69, 1016.8, 10, 50.746, '10_14k_04-1-2019_0911_1016-8_Lundeen_50-746.csv')
+    #  hsn_re_date_time_pressure_power_name.csv
+    e = hs_analysis('2_14k_04-6-2019_1516_1013-3_50-799_Lundeen.csv')
 
 
 
