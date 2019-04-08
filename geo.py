@@ -15,7 +15,7 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
         h = 1 * 0.0254                                                  # fin height (length), [m]
         s = 0.13125 * 0.0254                                            # fin spacing, [m]
         w = 2 * 0.0254                                                  # fin width, [m]
-        t = .1 * 0.0254                                                 # fin thickness, [m]
+        t = 0.1 * 0.0254                                                # fin thickness, [m]
         n = 7                                                           # number of fins, [unit-less]
     if hsn > 15:
         return print('heat sink number not recognized (geo.size)')
