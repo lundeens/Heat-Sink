@@ -131,7 +131,7 @@ def hs_analysis(rdata):
 
 
     # Heat Sink Geometry
-    # geo = (d_h, sr, perimeter, l_c, a_xc, h, a_fin, n, a_base, a_tot)
+    # geo = (d_h, sr, perimeter, l_c, a_xc, h, a_fin, n, a_base, a_tot, vol, mass)
     # u_geo = (u_b_d_h, u_b_perimeter, u_b_l_c, u_b_a_xc, u_b_st, u_b_a_base, u_b_a_tot)
     g, u_g = geo.size(hsn)                                           # geometry and geometric uncertainties
 
@@ -302,6 +302,8 @@ def hs_analysis(rdata):
                             "Time": [time],
                             "hsn": [hsn],
                             "A_tot (m^2)": [g[9]],
+                            "Volume (m^3)": [g[10]],
+                            "Mass (kg)": [g[11]],
                             "Ra": [g[2]],
                             "ve (m/s)": [ve],
                             "Re": [re],
@@ -338,8 +340,3 @@ def hs_analysis(rdata):
 if __name__ == '__main__':
     #  hsn_re_date_time_pressure_power_name.csv
     e = hs_analysis('2_14k_04-6-2019_1516_1013-3_50-799_Lundeen.csv')
-
-
-
-
-
