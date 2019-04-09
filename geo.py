@@ -37,7 +37,7 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
     d_h = 4 * a_space / (2 * h + s)                                     # hydraulic diameter, [m] only used for f
     u_b_d_h = math.sqrt((4 * u_b_a_space / (2 * h + s)) ** 2 + 2 * (4 * a_space * u_b_st / ((2 * h + s) ** 2)) ** 2)  # d_h bias unc, [m]
     sr = ra(hsn)                                                        # surface roughness, [m]
-    geo = (d_h, sr, perimeter, l_c, a_xc, h, a_fin, n, a_base, a_tot)
+    geo = (d_h, sr, perimeter, l_c, a_xc, h, a_fin, n, a_base, a_tot, vol(hsn), mass(hsn))
     u_geo = (u_b_d_h, u_b_perimeter, u_b_l_c, u_b_a_xc, u_b_st, u_b_a_base, u_b_a_tot)
     return geo, u_geo
 
@@ -52,6 +52,19 @@ def sa(hsn):  # returns the exposed surface area of each heat sink
     sa = [0.00015676, fp(), 4.4, 4.745053246, 4.570185148, 4.504747482, 4.570185148, 4.570185148, 4.504747482, 5.6691,
           4.80404, 4.57612, 4.80404, 4.80404, 4.57612]
     return sa[hsn]
+
+
+def vol(hsn):  # returns the volume of the heat sink [m^3]
+    vol = [1, 0.00001587495676, 0.00003881243676, 0.00004336666235, 0.00003911664770, 0.00003897805909,
+           0.00003911664770, 0.00003911664770, 0.00003897805909, 0.00004028058364, 0.00003928286034, 0.00003901997983,
+           0.00003928286034, 0.00003928286034, 0.00003901997983]
+    return vol[hsn]
+
+
+def mass(hsn):  # returns the mass of the heat sink [kg]
+    mass = [1, 0.041274888, 0.100912336, 0.112753322, 0.101703284, 0.101342954, 0.101703284, 0.101703284, 0.101342954,
+            0.104729517, 0.102135437, 0.101451948, 0.102135437, 0.102135437, 0.101451948]
+    return mass[hsn]
 
 
 def fp():
