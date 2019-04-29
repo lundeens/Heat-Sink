@@ -9,8 +9,9 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
     if hsn == 0:
         g_b = (0.0089, 0.0018, 0.0078, 0.0007, 180)                     # geometry of test heat sink
     if hsn == 1:
-        geo_fp = (ra(hsn), 0.0508, 0.00225806, 1.7145 * 10 ** -6)                          # (Ra, Lc [m], A [m^2], u_A [m^2]) for flat plate
-        return geo_fp
+        geo_fp = (ra(hsn), 0.0508, 0.00225806, 1.7145 * 10 ** -6, vol(hsn), mass(hsn)) # (Ra, Lc [m], A [m^2], u_A [m^2], volume [m^3], mass [kg]) for flat plate
+        u_geo_fp = [2.54 * 10 ** -5]
+        return geo_fp, u_geo_fp
     if 2 <= hsn <= 15:
         h = 1 * 0.0254                                                  # fin height (length), [m]
         s = 0.13125 * 0.0254                                            # fin spacing, [m]
