@@ -96,6 +96,7 @@ def hs_analysis(folder):
         # u_p_tba =                                                     # hs base tc prec unc, [k]
         # u_p_tam =                                                     # amb tc prec unc, [k]
         # u_cu = 0.25 * math.sqrt(19.36 + u_p_tcf ** 2 + u_p_tcr ** 2 + u_p_tcb ** 2 + u_p_tcl ** 2)  # avg cu tc unc, [k]
+        u_res_o_rep = 0
 
         # Temperature plots
         # time = numpy.arange(0, len(cu_top_), 1)  # x range
@@ -137,65 +138,132 @@ def hs_analysis(folder):
         # Heat Sink Geometry
         # g = (d_h, sr, perimeter, l_c, a_xc, h, a_fin, n, a_base, a_tot, vol, mass)
         # (Ra, Lc [m], A [m^2], u_A [m^2], volume [m^3], mass [kg]) for flat plate
-        # u_g = (u_b_d_h, u_b_perimeter, u_b_l_c, u_b_a_xc, u_b_st, u_b_a_base, u_b_a_tot)
+        # u_g = (u_b_d_h, u_b_perimeter, u_b_l_c, u_b_a_xc, u_b_st_calipers, u_b_a_base, u_b_a_tot)
+        # u_geo_fp = [2.54 * 10 ** -5]
         g, u_g = geo.size(hsn)                                           # geometry and geometric uncertainties
 
         # Thermal Loss
-        # l_b = (0.00258064 / 0.0127) * k_del * (temp_cu - temp_delb)    # thermal loss through bottom delrin [W]
+
         # loss out the bottom
         temp_film_bo = (temp_delb + temp_amb) / 2                        # film temperature at bottom, [k]
+        u_temp_film_bo = 0.5 * math.sqrt(2 * u_b_st ** 2)
         k_air_bo = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')    # thermal conductivity of air, [W/m*k]
+        u_k_air_bo = max(abs(PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film_bo + u_temp_film_bo, 'P', p*100, 'Air')), abs(PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film_bo - u_temp_film_bo, 'P', p*100, 'Air')))
         rho_bo = PropsSI('D', 'T', temp_film_bo, 'P', p*100, 'Air')      # density of air, [kg/m^3]
-        cp_bo = PropsSI('CP0MASS', 'T', temp_film_bo, 'P', p*100, 'Air') # specific heat of air, [J/kg*k]
+        u_rho_bo = max(abs(PropsSI('D', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('D', 'T', temp_film_bo + u_temp_film_bo, 'P', p*100, 'Air')), abs(PropsSI('D', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('D', 'T', temp_film_bo - u_temp_film_bo, 'P', p*100, 'Air')))
+        cp_bo = PropsSI('CP0MASS', 'T', temp_film_bo, 'P', p*100, 'Air')  # specific heat of air, [J/kg*k]
+        u_cp_bo = max(abs(PropsSI('CP0MASS', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('CP0MASS', 'T', temp_film_bo + u_temp_film_bo, 'P', p*100, 'Air')), abs(PropsSI('CP0MASS', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('CP0MASS', 'T', temp_film_bo - u_temp_film_bo, 'P', p*100, 'Air')))
         alpha_bo = k_air_bo / (rho_bo * cp_bo)                           # thermal diffusivity, [m^2/s]
-        kvisc_bo = PropsSI('V', 'T', temp_film_bo, 'P', p*100, 'Air') / rho_bo  # kinematic viscosity of air, [m^2/s]
+        u_alpha_bo = math.sqrt((u_k_air_bo / (rho_bo * cp_bo)) ** 2 + (u_rho_bo * k_air_bo / (cp_bo * rho_bo ** 2)) ** 2 + (u_cp_bo * k_air_bo / (rho_bo * cp_bo ** 2)) ** 2)
+        visc_bo = PropsSI('V', 'T', temp_film_bo, 'P', p*100, 'Air')
+        u_visc_bo = max(abs(PropsSI('V', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('V', 'T', temp_film_bo + u_temp_film_bo, 'P', p*100, 'Air')), abs(PropsSI('V', 'T', temp_film_bo, 'P', p*100, 'Air') - PropsSI('V', 'T', temp_film_bo - u_temp_film_bo, 'P', p*100, 'Air')))
+        kvisc_bo = visc_bo / rho_bo  # kinematic viscosity of air, [m^2/s]
+        u_kvisc_bo = math.sqrt((u_visc_bo / rho_bo) ** 2 + (visc_bo * u_rho_bo / (rho_bo ** 2)) ** 2)
         ra = 9.81 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 3) / (alpha_bo * kvisc_bo)  # Rayleigh number [unit-less]
+        u_ra_tf = 9.81 * (1 / temp_film_bo ** 2) * (temp_delb - temp_amb) * (0.0508 ** 3) * u_temp_film_bo / (alpha_bo * kvisc_bo)
+        u_ra_td = 9.81 * (0.0508 ** 3) * (1 / temp_film_bo) * u_b_st / (alpha_bo * kvisc_bo)
+        u_ra_ta = 9.81 * (0.0508 ** 3) * (1 / temp_film_bo) * u_b_st / (alpha_bo * kvisc_bo)
+        u_ra_w = 29.43 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 2) * u_g[4] / (alpha_bo * kvisc_bo)
+        u_ra_alpha = 9.81 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 3) * u_alpha_bo / (kvisc_bo * alpha_bo ** 2)
+        u_ra_kvisc = 9.81 * (1 / temp_film_bo) * (temp_delb - temp_amb) * (0.0508 ** 3) * u_kvisc_bo / (alpha_bo * kvisc_bo ** 2)
+        u_ra = math.sqrt(u_ra_tf ** 2 + u_ra_td ** 2 + u_ra_ta ** 2 + u_ra_w ** 2 + u_ra_alpha ** 2 + u_ra_kvisc ** 2)
         h_bo = 0.52 * k_air_bo * (ra ** (1 / 5)) / 0.0508                # convective heat transfer coefficient, [W/m^2*k]
+        u_h_bo_k = 0.52 * (ra ** (1 / 5)) * u_k_air_bo / 0.0508
+        u_h_bo_ra = 0.104 * k_air_bo * (ra ** (-4 / 5)) * u_ra / 0.0508
+        u_h_bo_w = 0.52 * k_air_bo * (ra ** (1 / 5)) * u_g[4] / (0.0508 ** 2)
+        u_h_bo = math.sqrt(u_h_bo_k ** 2 + u_h_bo_ra ** 2 + u_h_bo_w ** 2)
         l_bo = 0.00258064 * (temp_cu - temp_amb) / ((1 / h_bo) + (0.0127 / k_del))  # loss through bottom delrin [W]
+        u_l_bo_a = (temp_cu - temp_amb) * (2 * 0.0508 * u_g[4]) / ((1 / h_bo) + (0.0127 / k_del))
+        u_l_bo_tc = 0.00258064 * u_b_st / ((1 / h_bo) + (0.0127 / k_del))
+        u_l_bo_ta = 0.00258064 * u_b_st / ((1 / h_bo) + (0.0127 / k_del))
+        u_l_bo_h = 0.00258064 * (k_del ** 2) * (temp_cu - temp_amb) * u_h_bo / ((h_bo * 0.0127 + k_del) ** 2)
+        u_l_bo_t = 0.00258064 * (h_bo ** 2) * k_del * (temp_cu - temp_amb) * u_g[4] / ((h_bo * 0.0127 + k_del) ** 2)
+        u_l_bo = math.sqrt(u_l_bo_a ** 2 + u_l_bo_tc ** 2 + u_l_bo_ta ** 2 + u_l_bo_h ** 2 + u_l_bo_t ** 2)
 
         # loss out the base
-        k_air_ba = PropsSI('L', 'T', temp_film_bo, 'P', p*100, 'Air')     # thermal conductivity of air, [W/m*k]
-        pr_ba = PropsSI('Prandtl', 'T', temp_film_bo, 'P', p*100, 'Air')  # Prandtl number, [unit-less]
+        k_air_ba = PropsSI('L', 'T', temp_film, 'P', p*100, 'Air')     # thermal conductivity of air, [W/m*k]
+        u_k_air_ba = max(abs(PropsSI('L', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film + u_temp_film, 'P', p*100, 'Air')), abs(PropsSI('L', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('L', 'T', temp_film - u_temp_film, 'P', p*100, 'Air')))
+        pr_ba = PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air')  # Prandtl number, [unit-less]
+        u_pr_ba = max(abs(PropsSI('Prandtl', 'T', temp_amb, 'P', p*100, 'Air') - PropsSI('Prandtl', 'T', temp_film + u_temp_film, 'P', p*100, 'Air')), abs(PropsSI('Prandtl', 'T', temp_film, 'P', p*100, 'Air') - PropsSI('Prandtl', 'T', temp_film - u_temp_film, 'P', p*100, 'Air')))
         re_ba = dens * ve * 0.1016 / visc                                 # Reynolds number at the base, [unit-less]
-        h_ba = k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) / 0.0508  # heat transfer coefficient [W/m^2*k]
-        l_ba = 0.007974 * (temp_cu - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the base, [W]
+        u_re_ba_v = dens * 0.1016 * u_v / visc  # v partial for re unc, [unit-less]
+        u_re_ba_dens = ve * 0.1016 * u_dens / visc  # dens partial for re unc, [unit-less]
+        u_re_ba_s = dens * ve * u_g[4] / visc  # s partial for re unc, [unit-less]
+        u_re_ba_visc = dens * ve * 0.1016 * u_visc / (visc ** 2)  # visc partial for re unc, [unit-less]
+        u_re_ba = math.sqrt(u_re_ba_v ** 2 + u_re_ba_dens ** 2 + u_re_ba_s ** 2 + u_re_ba_visc ** 2)  # re_ba unc, [unit-less]
+        h_ba = k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) / 0.1016  # heat transfer coefficient [W/m^2*k]
+        u_h_ba_k = u_k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) / 0.1016
+        u_h_ba_re = k_air_ba * 0.10428 * (re_ba ** -0.34) * (pr_ba ** (1 / 3)) * u_re_ba / 0.1016
+        u_h_ba_p = k_air_ba * 0.05267 * (re_ba ** 0.66) * (pr_ba ** (-2 / 3)) * u_pr_ba / 0.1016
+        u_h_ba_d = k_air_ba * 0.158 * (re_ba ** 0.66) * (pr_ba ** (1 / 3)) * u_g[4] / (0.1016 ** 2)
+        u_h_ba = math.sqrt(u_h_ba_k ** 2 + u_h_ba_re ** 2 + u_h_ba_p ** 2 + u_h_ba_d ** 2)
+        l_ba = 0.007974 * 2 * (temp_cu - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the base, [W]
+        u_l_ba_a = (temp_cu - temp_amb) * 4 * math.sqrt((0.1016 * u_g[4]) ** 2 + (.039243 * u_g[4]) ** 2) / ((1 / h_ba) + (0.0254 / k_del))
+        u_l_ba_tc = 0.007974 * 2 * u_b_st / ((1 / h_ba) + (0.0254 / k_del))
+        u_l_ba_ta = 0.007974 * 2 * u_b_st / ((1 / h_ba) + (0.0254 / k_del))
+        u_l_ba_h = 0.007974 * 2 * (k_del ** 2) * (temp_cu - temp_amb) * u_h_ba / ((h_ba * 0.0254 + k_del) ** 2)
+        u_l_ba_t = 0.007974 * 2 * (h_ba ** 2) * k_del * (temp_cu - temp_amb) * u_g[4] / ((h_ba * 0.0254 + k_del) ** 2)
+        u_l_ba = math.sqrt(u_l_ba_a ** 2 + u_l_ba_tc ** 2 + u_l_ba_ta ** 2 + u_l_ba_h ** 2 + u_l_ba_t ** 2)
 
         # loss out the fourier section
         topgrad = (temp_cu_top_ - temp_cu_midd) / 0.018999  # 0.748 in    # map out temperature gradients and average them
+        u_topgrad = math.sqrt(2 * (u_b_st / 0.018999) ** 2 + (u_g[4] * (temp_cu_top_ - temp_cu_midd) / (0.018999 ** 2)) ** 2)
         bottomgrad = (temp_cu_midd - temp_cu_bott) / 0.019075  # 0.751 in # to create a reference gradient that will be used
+        u_bottomgrad = math.sqrt(2 * (u_b_st / 0.019075) ** 2 + (u_g[4] * (temp_cu_midd - temp_cu_bott) / (0.019075 ** 2)) ** 2)
         fullgrad = (temp_cu_top_ - temp_cu_bott) / 0.038075  # 1.499 in   # to find the average temperature on the side
+        u_fullgrad = math.sqrt(2 * (u_b_st / 0.038075) ** 2 + (u_g[4] * (temp_cu_top_ - temp_cu_bott) / (0.038075 ** 2)) ** 2)
         tgrad = (topgrad + bottomgrad + fullgrad) / 3
-        temp_int = temp_cu_midd - tgrad * 0.037313  # 1.469 in            # top surface temperature estimation
-        temp_top = tgrad * 0.064567 + temp_int  # 2.542 in                # bottom of gradient temperature estimation
-        l_s = 0.01312 * (((temp_int + temp_top) / 2) - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the side, [W], h = 1.545 in
+        u_tgrad = math.sqrt(u_topgrad ** 2 + u_bottomgrad ** 2 + u_fullgrad ** 2) / 3
+        temp_int = temp_cu_midd - tgrad * 0.037313  # 1.469 in            # bottom of gradient temperature estimation
+        u_temp_int = math.sqrt(u_b_st ** 2 + (0.037313 * u_tgrad) ** 2)
+        temp_top = tgrad * 0.064567 + temp_int  # 2.542 in                # top surface temperature estimation
+        u_temp_top = math.sqrt((0.064567 * u_tgrad) ** 2 + u_temp_int)
+        temp_ave = (temp_int + temp_top) / 2
+        u_temp_ave = math.sqrt(u_temp_int ** 2 + u_temp_top ** 2) / 2
+        l_s = 0.01312 * 2 * (temp_ave - temp_amb) / ((1 / h_ba) + (0.0254 / k_del))  # loss out the side, [W], h = 2.542 in
+        u_l_s_a = (temp_ave - temp_amb) * 4 * math.sqrt((0.1016 * u_g[4]) ** 2 + (.06457 * u_g[4]) ** 2) / ((1 / h_ba) + (0.0254 / k_del))
+        u_l_s_tc = 0.01312 * 2 * u_b_st / ((1 / h_ba) + (0.0254 / k_del))
+        u_l_s_ta = 0.01312 * 2 * u_b_st / ((1 / h_ba) + (0.0254 / k_del))
+        u_l_s_h = 0.01312 * 2 * (k_del ** 2) * (temp_ave - temp_amb) * u_h_ba / ((h_ba * 0.0254 + k_del) ** 2)
+        u_l_s_t = 0.01312 * 2 * (h_ba ** 2) * k_del * (temp_ave - temp_amb) * u_g[4] / ((h_ba * 0.0254 + k_del) ** 2)
+        u_l_s = math.sqrt(u_l_s_a ** 2 + u_l_s_tc ** 2 + u_l_s_ta ** 2 + u_l_s_h ** 2 + u_l_s_t ** 2)
 
         loss = l_bo + l_ba + l_s                                     # total loss
+        u_loss = math.sqrt(u_l_bo ** 2 + u_l_ba ** 2 + u_l_s ** 2)
+        u_ps = 0.1
         leftover = ps - loss                                         # leftover after loss
+        u_leftover = math.sqrt(u_ps ** 2 + u_loss ** 2)
         qpa = leftover / 22.5086                                        # leftover flux
+        u_qpa = math.sqrt((u_leftover / 22.5086) ** 2 + leftover * math.sqrt((0.0508 * u_g[4]) ** 2 + (0.04445 * u_g[4]) ** 2) / (22.5086 ** 2))
         # print('losses:', q, l_bo, l_ba, l_s, leftover, qpa)
 
         # Thermal Analysis
         if hsn == 1:                                                 # flat plate correlations
             re = ind.reynolds(ve, dens, g[1], visc)                  # Reynolds number for flat plate
-            u_re_v = 2 * dens * g[1] * math.sqrt(u_p_v ** 2 + u_b_v ** 2) / visc  # v partial for re unc, [unit-less]
-            u_re_dens = 2 * ve * g[1] * u_dens / visc                              # dens partial for re unc, [unit-less]
-            u_re_s = 2 * dens * ve * u_g[0] / visc                                 # s partial for re unc, [unit-less]
-            u_re_visc = 2 * dens * ve * g[1] * u_visc / (visc ** 2)                # visc partial for re unc, [unit-less]
+            u_re_v = dens * g[1] * math.sqrt(u_p_v ** 2 + u_b_v ** 2) / visc  # v partial for re unc, [unit-less]
+            u_re_dens = ve * g[1] * u_dens / visc                              # dens partial for re unc, [unit-less]
+            u_re_s = dens * ve * u_g[0] / visc                                 # s partial for re unc, [unit-less]
+            u_re_visc = dens * ve * g[1] * u_visc / (visc ** 2)                # visc partial for re unc, [unit-less]
             u_re = math.sqrt(u_re_v ** 2 + u_re_dens ** 2 + u_re_s ** 2 + u_re_visc ** 2)  # re unc, [unit-less]
-            nu = 0.037 * (re ** (4 / 5)) * (pr ** (1 / 3))           # Nusselt number for turbulent flow over a flat plate
+            nu_t = 0.037 * (re ** (4 / 5)) * (pr ** (1 / 3))           # Nusselt number for turbulent flow over a flat plate
             u_nu_re = 4 * (pr ** (1 / 3)) * u_re / (5 * re ** (1 / 5))  # re partial for nu unc, [?]
             u_nu_pr = (re ** (4 / 5)) * u_pr / (3 * (pr ** (2 / 3)))  # pr partial for nu unc, [?]
             u_nu = math.sqrt(u_nu_re ** 2 + u_nu_pr ** 2)  # nu unc, [unit-less]
-            h = nu * k_air / g[1]                                    # heat transfer coefficient, [W/m^2*k]
-            u_h = math.sqrt((k_air * u_nu / g[1]) ** 2 + (nu * u_k_air / g[1]) ** 2 + (nu * k_air * u_g[0] / (g[1] ** 2)) ** 2)  # coeff_hx unc, [W/m^2*k]
-            qdp = h * (temp_base - temp_amb)                         # heat flux out the plate, [W/m^2]
-            u_qdp = math.sqrt((u_h * (temp_base - temp_amb)) ** 2 + (h * math.sqrt((u_b_temp_base ** 2) + (u_b_st ** 2))) ** 2 + (h * math.sqrt((u_b_st ** 2) + (u_b_st ** 2))) ** 2)
+            h_t = nu_t * k_air / g[1]                                    # heat transfer coefficient, [W/m^2*k]
+            u_h_t = math.sqrt((k_air * u_nu / g[1]) ** 2 + (nu_t * u_k_air / g[1]) ** 2 + (nu_t * k_air * u_g[0] / (g[1] ** 2)) ** 2)  # coeff_hx unc, [W/m^2*k]
+            res_o_t_t = 1 / (h_t * g[2])
+            nu_l = 0.68 * (re ** (1 / 2)) * (pr ** (1 / 3))           # Nusselt number for laminar flow over a flat plate
+            h_l = nu_l * k_air / g[1]
+            res_o_t_l = 1 / (h_l * g[2])
+            qdp = h_t * (temp_base - temp_amb)                         # heat flux out the plate, [W/m^2]
+            u_qdp = math.sqrt((u_h_t * (temp_base - temp_amb)) ** 2 + (h_t * math.sqrt((u_b_temp_base ** 2) + (u_b_st ** 2))) ** 2 + (h_t * math.sqrt((u_b_st ** 2) + (u_b_st ** 2))) ** 2)
             q = qdp * g[2]                                           # heat rate out the plate, [W]
             u_q = math.sqrt((u_qdp * g[2]) ** 2 + (qdp * g[3]) ** 2)  # q unc, [W]
-            res_o_m = (temp_base - temp_amb) / leftover
-            print('Flat Plate Performance (HSN 1): h=', h, ' qdp=', qdp, 'q=', q, 'R=', res_o_m)
-            perf = (re, nu, h, qdp, q)                                   # performance tuple
-            unc = (u_re, u_nu, u_h, u_qdp, u_q)                          # uncertainty tuple
+            res_o_m = dt / leftover
+            u_res_o_m = math.sqrt((u_dt / leftover) ** 2 + (u_leftover * dt / (leftover ** 2)) ** 2 + u_res_o_rep ** 2)
+            print('Flat Plate Performance (HSN 1): h_t=', h_t, ' qdp=', qdp, 'q=', q, 'R=', res_o_m)
+            perf = (re, nu_t, h_t, qdp, q)                                   # performance tuple
+            unc = (u_re, u_nu, u_h_t, u_qdp, u_q)                          # uncertainty tuple
             # (Ra, Lc [m], A [m^2], u_A [m^2], volume [m^3], mass [kg]) for flat plate
             dfa = pandas.DataFrame({"File Name": [rdata],
                                     "Date": [date],
@@ -222,31 +290,38 @@ def hs_analysis(folder):
                                     "h (W/m^2*k)": ['NA'],
                                     "q_fin (W)": ['NA'],
                                     "q_tot (W)": [q],
-                                    "eff": ['NA'],
-                                    "eta": ['NA'],
-                                    "eta_o": ['NA'],
-                                    "R_fin (k/W)": ['NA'],
-                                    "R_0 (k/W)": ['NA'],
+                                    "eff": [dens],
+                                    "eta": [visc],
+                                    "eta_o": [k_air],
+                                    "R_fin (k/W)": [res_o_t_t],
+                                    "R_0 (k/W)": [res_o_t_l],
                                     "u_ve": [u_v],
                                     "u_re": [u_re],
                                     "u_nu": [u_nu],
-                                    "u_h": [u_h],
+                                    "u_h": [u_h_t],
                                     "u_q_fin": ['NA'],
                                     "u_q_tot": [u_q],
                                     "u_eff": ['NA'],
                                     "u_eta": ['NA'],
                                     "u_eta_o": ['NA'],
                                     "u_R_fin": ['NA'],
-                                    "u_R_o": ['NA']})
+                                    "u_R_o": ['NA'],
+                                    "u_l_bo": [u_l_bo],
+                                    "u_l_ba": [u_l_ba],
+                                    "u_l_s": [u_l_s],
+                                    "u_loss": [u_loss],
+                                    "u_leftover": [u_leftover],
+                                    "u_qpa": [u_qpa],
+                                    "u_res_o_m": [u_res_o_m]})
             with open('Record.csv', 'a') as f:
                 dfa.to_csv(f, header=False, index=False)
             # return perf, unc                                # velocity range, [m/s] NEEDS UPDATING
         if hsn != 1:
             re = ind.reynolds(ve, dens, g[3], visc)                       # Reynolds Number (l_c), [unit-less] @ T_amb
-            u_re_v = 2 * dens * g[3] * math.sqrt(u_v ** 2) / visc  # v partial for re unc, [unit-less]
-            u_re_dens = 2 * ve * g[3] * u_dens / visc                              # dens partial for re unc, [unit-less]
-            u_re_s = 2 * dens * ve * u_g[4] / visc                                 # s partial for re unc, [unit-less]
-            u_re_visc = 2 * dens * ve * g[3] * u_visc / (visc ** 2)                # visc partial for re unc, [unit-less]
+            u_re_v = dens * g[3] * u_v / visc  # v partial for re unc, [unit-less]
+            u_re_dens = ve * g[3] * u_dens / visc                              # dens partial for re unc, [unit-less]
+            u_re_s = dens * ve * u_g[4] / visc                                 # s partial for re unc, [unit-less]
+            u_re_visc = dens * ve * g[3] * u_visc / (visc ** 2)                # visc partial for re unc, [unit-less]
             u_re = math.sqrt(u_re_v ** 2 + u_re_dens ** 2 + u_re_s ** 2 + u_re_visc ** 2)  # re unc, [unit-less]
 
             f = ind.darcy(re, g[1], g[0])                                # Darcy Friction Factor, [unit-less]
@@ -327,6 +402,9 @@ def hs_analysis(folder):
             print(u_res_o)
 
             res_o_m = dt / leftover
+            print(res_o_m)
+            u_res_o_m = math.sqrt((u_dt / leftover) ** 2 + (u_leftover * dt / (leftover ** 2)) ** 2 + u_res_o_rep ** 2)
+            print(u_res_o_m)
 
             # Efficiency plot
             # plt.plot(v, eta, 'r', v, eta_o, 'b')  # plot the data
@@ -391,7 +469,14 @@ def hs_analysis(folder):
                                     "u_eta": [u_eta],
                                     "u_eta_o": [u_eta_o],
                                     "u_R_fin": [u_res_fin],
-                                    "u_R_o": [u_res_o]})
+                                    "u_R_o": [u_res_o],
+                                    "u_l_bo": [u_l_bo],
+                                    "u_l_ba": [u_l_ba],
+                                    "u_l_s": [u_l_s],
+                                    "u_loss": [u_loss],
+                                    "u_leftover": [u_leftover],
+                                    "u_qpa": [u_qpa],
+                                    "u_res_o_m": [u_res_o_m]})
             with open('Record.csv', 'a') as f:
                 dfa.to_csv(f, header=False, index=False)
     return
@@ -399,4 +484,4 @@ def hs_analysis(folder):
 
 if __name__ == '__main__':
     #  hsn_re_date_time_pressure_power_name.csv
-    e = hs_analysis('Data/hsn 1 sheet')
+    e = hs_analysis('Data/hsn 2/4-17')
