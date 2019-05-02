@@ -10,7 +10,7 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
         g_b = (0.0089, 0.0018, 0.0078, 0.0007, 180)                     # geometry of test heat sink
     if hsn == 1:
         geo_fp = (ra(hsn), 0.0508, 0.00225806, 1.7145 * 10 ** -6, vol(hsn), mass(hsn)) # (Ra, Lc [m], A [m^2], u_A [m^2], volume [m^3], mass [kg]) for flat plate
-        u_geo_fp = [2.54 * 10 ** -5]
+        u_geo_fp = [2.54 * 10 ** -5, 1, 1, 1, 2.54 * 10 ** -5]
         return geo_fp, u_geo_fp
     if 2 <= hsn <= 15:
         h = 1 * 0.0254                                                  # fin height (length), [m]
@@ -23,7 +23,7 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
 
     u_b_st = 2.54 * 10 ** -5                                            # standard caliper bias, [m]
     perimeter = 2 * w + 2 * t                                           # space perimeter, [m]
-    u_b_perimeter = math.sqrt(2 * (2 * u_b_st ) ** 2)                   # perimeter bias unc, [m]
+    u_b_perimeter = math.sqrt(2 * (2 * u_b_st) ** 2)                   # perimeter bias unc, [m]
     l_c = 2 * s                                                         # characteristic length, [m]
     u_b_l_c = 2 * u_b_st                                                # l_c bias unc, [m]
     a_space = h * s                                                     # area of the space, [m^2]
