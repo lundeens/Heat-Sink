@@ -23,7 +23,7 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
 
     u_b_st = 2.54 * 10 ** -5                                            # standard caliper bias, [m]
     perimeter = 2 * w + 2 * t                                           # space perimeter, [m]
-    u_b_perimeter = math.sqrt(2 * (2 * u_b_st) ** 2)                   # perimeter bias unc, [m]
+    u_b_perimeter = math.sqrt(2 * (2 * u_b_st) ** 2)                    # perimeter bias unc, [m]
     l_c = 2 * s                                                         # characteristic length, [m]
     u_b_l_c = 2 * u_b_st                                                # l_c bias unc, [m]
     a_space = h * s                                                     # area of the space, [m^2]
@@ -34,9 +34,11 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
     u_b_a_base = math.sqrt(((w * (n + 1) * u_b_st) ** 2) + ((s * (n + 1) * u_b_st) ** 2))  # a_base bias unc, [m^2]
     a_fin = sa(hsn)                                                     # fin area, [m^2]
     a_tot = n * a_fin + a_base                                          # fin area + base area, [m^2]
-    u_b_a_tot = math.sqrt(((w * (n + 1) * u_b_st) ** 2) + ((s * (n + 1) * u_b_st) ** 2))  # a_tot bias unc, [m^2]
+    u_b_a_tot = u_b_a_base                                              # a_tot bias unc, [m^2]
     d_h = 4 * a_space / (2 * h + s)                                     # hydraulic diameter, [m] only used for f
-    u_b_d_h = math.sqrt((4 * u_b_a_space / (2 * h + s)) ** 2 + 2 * (4 * a_space * u_b_st / ((2 * h + s) ** 2)) ** 2)  # d_h bias unc, [m]
+    u_b_d_h = math.sqrt((4 * u_b_a_space / (2 * h + s)) ** 2 + (8 * a_space * u_b_st / ((2 * h + s) ** 2)) ** 2 + (4 * a_space * u_b_st / ((2 * h + s) ** 2)) ** 2)  # d_h bias unc, [m]
+    # l_c = d_h                                                           # characteristic length, [m]
+    # u_b_l_c = u_b_d_h                                                   # l_c bias unc, [m]
     sr = ra(hsn)                                                        # surface roughness, [m]
     geo = (d_h, sr, perimeter, l_c, a_xc, h, a_fin, n, a_base, a_tot, vol(hsn), mass(hsn))
     u_geo = (u_b_d_h, u_b_perimeter, u_b_l_c, u_b_a_xc, u_b_st, u_b_a_base, u_b_a_tot)
@@ -44,7 +46,9 @@ def size(hsn):  # basic geometry : (length, spacing, width, thickness, # of fins
 
 
 def ra(hsn):  # returns the value of the surface roughness for a given heat sink number
-    ra = [0.00015, 0.000005, 0.000005, 0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961,
+    # ra = [0.00015, 0.000005, 0.000005, 0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961,
+          # 0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961]
+    ra = [0.00015, 0.000005, 0.000036, 0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961,
           0.0000707484, 0.000031586, 0.000017961, 0.000031586, 0.000031586, 0.000017961]
     return ra[hsn]
 
