@@ -5,7 +5,7 @@ import math
 
 
 # Functions
-def kal(t):  # returns the thermal conductivity of aluminum for a given temperature
+def kal(t):  # returns the thermal conductivity of aluminum for a given temperature, Al 6061
     return 101.42 + 0.7709*t - ((7.731*10**-5)*t**2) - ((7.514*10**-6)*t**3) + ((1.934*10**-8)*t**4) - ((1.973*10**-11)*t**5) + ((7.406*10**-15)*t**6)
 
 
@@ -28,6 +28,10 @@ def darcy(re, surf_rough, diam_hyd):  # finds the darcy friction factor
 
 def nusselt(f, re, pr):  # finds the nusselt number
     return (f / 8) * (re - 1000) * pr / (1 + 12.7 * math.sqrt(f / 8) * ((pr ** (2 / 3)) - 1))
+
+
+def nusselt2(re, pr):  # finds the nusselt number without the friction factor
+    return 0.023 * (re ** 0.8) * (pr ** 0.33)
 
 
 def hxc(nu, k_air, diam_hyd):  # finds the convective heat transfer coefficient
