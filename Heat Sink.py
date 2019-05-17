@@ -24,28 +24,28 @@ def hs_analysis(folder):
         hsn = int(parse[0])
         if parse[1] == '14k':
             ve = 31.69
-            u_res_o_rep = 0.010436
-            u_re_rep = 103.2526
+            u_res_o_rep = 0.004524
+            u_re_rep = 165.4701
         elif parse[1] == '12k':
             ve = 27.17
-            u_res_o_rep = 0.010104
-            u_re_rep = 108.1364
+            u_res_o_rep = 0.008304
+            u_re_rep = 175.1559
         elif parse[1] == '10k':
             ve = 22.64
-            u_res_o_rep = 0.009855
-            u_re_rep = 115.5391
+            u_res_o_rep = 0.005874
+            u_re_rep = 131.3773
         elif parse[1] == '08k':
             ve = 18.11
-            u_res_o_rep = 0.009755
-            u_re_rep = 123.6246
+            u_res_o_rep = 0.005805
+            u_re_rep = 145.865
         elif parse[1] == '06k':
             ve = 13.58
-            u_res_o_rep = 0.009625
-            u_re_rep = 133.3717
+            u_res_o_rep = 0.02144
+            u_re_rep = 86.77191
         elif parse[1] == '04k':
             ve = 9.06
-            u_res_o_rep = 0.009516
-            u_re_rep = 143.1026
+            u_res_o_rep = 0.007606
+            u_re_rep = 64.01952
         else:
             return ValueError('Reynolds number input not recognized.')
         date = parse[2]
@@ -580,4 +580,4 @@ def hs_analysis(folder):
 
 if __name__ == '__main__':
     #  hsn_re_date_time_pressure_power_name.csv
-    e = hs_analysis('Data/hsn 9')
+    e = hs_analysis('Data/hsn 2/4-17')
